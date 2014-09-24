@@ -1,22 +1,24 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define pascal_int unsigned long long int
+
 int main(){
     int n,i,j;
     scanf("%i",&n);
-    int **d_array =(int**)malloc(n*sizeof(int*));
+    n++;
+    pascal_int **d_array =(pascal_int**)malloc(n*sizeof(pascal_int*));
 
-    d_array[0] = (int*)calloc(2,sizeof(int));
+    d_array[0] = (pascal_int*)calloc(3,sizeof(pascal_int));
     d_array[0][1] = 1;
     
     for(i = 1;i<n;i++){
-        d_array[i] = (int*)calloc(i+2,sizeof(int));   
+        d_array[i] = (pascal_int*)calloc(i+3,sizeof(pascal_int));
         for(j = 1;j<i+2;j++){
             d_array[i][j] = d_array[i-1][j-1]+d_array[i-1][j];
-            printf("%i ",d_array[i][j]);
+            printf("%llu ",d_array[i][j]);
         }
         printf("\n");
     }
-
     return 0;
 }
