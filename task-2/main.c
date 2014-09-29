@@ -6,9 +6,10 @@
 #define UPPER 26
 #define NUMBER 52
 #define SPACE 62
+#define STR_SIZE 256
 
 int main(){
-    char *c; /* ошбика при инициализации */ 
+    char *c = (char*)malloc(STR_SIZE);  
     int min_i,shift,i = 0;
     int *times_repeated = (int*)calloc(LEN,sizeof(int));
 
@@ -39,7 +40,6 @@ int main(){
         }
         i++;
     }
-
     for(;i<LEN;i++){
         if ((times_repeated[i])&&(times_repeated[i]<times_repeated[min_i])){
             min_i = i;
