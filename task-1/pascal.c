@@ -20,5 +20,9 @@ int main(){
         }
         printf("\n");
     }
+
+    for(i = 0;i<n;i++)
+        free(d_array[i]);
+    free(d_array);
     return 0;
 }
