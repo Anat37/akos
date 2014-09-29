@@ -49,7 +49,7 @@ int main(){
     shift = (min_i<26)?(int)'a'-LOWER:
         (min_i<52)?(int)'A'-UPPER:
             (min_i<62)?(int)'0'-NUMBER:(int)' '-SPACE;
-    printf("%c", min_i+shift);
+    printf("Most rare symbol is: '%c'\n", min_i+shift);
     free(times_repeated);
     return 0;
 }

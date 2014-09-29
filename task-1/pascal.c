@@ -16,7 +16,7 @@ int main()
     for(i = 1; i<n; i++)
     {
         d_array[i] = (pascal_int*)calloc(i+3,sizeof(pascal_int));
-        for(j = 1; j<i+2; j++)
+        for(j = 1; j < i+2; j++)
         {
             d_array[i][j] = d_array[i-1][j-1]+d_array[i-1][j];
             printf("%llu ",d_array[i][j]);
