@@ -48,7 +48,7 @@ int get_long_char(char ** string,char* file_name )
 
 int main()
 {
-    char **str;
+    char **str = NULL;
     get_long_char(str,"small_input_data.txt");
     printf("%s\n",*str);
     return 0;
