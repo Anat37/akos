@@ -17,7 +17,7 @@ int get_long_char(char ** string,char* file_name )
     }
     const int PAGE_SIZE = SHRT_MAX;
     unsigned long long int file_size = 0;
-    *string =NULL; 
+    *string = NULL; 
     char *tmp = (char*)malloc(PAGE_SIZE);
     if (tmp == NULL)
     {
