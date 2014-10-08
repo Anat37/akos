@@ -3,7 +3,7 @@
 int main()
 {
     FILE *fp = fopen("input_data.txt","w");
-    unsigned short i = 1;
+    char i = 1;
     while (i!=0)
     {
         fprintf(fp,"%i\n",i);
