@@ -3,57 +3,76 @@
 #include <limits.h>
 #include <string.h>
 
-/*
-* function read much as it can, and change first parametr
-* return 0 if all is ok 
-* return -1 if error with allocating memory
-* retrun -2 if error with opening file
-*/
+#define OPEN_FILE_ERR -2
+#define UNEXPECTED_ERR -100
+#define ALLOCATE_MEM_ERR -1
+
 
 int get_long_char(char ** string,FILE* fp )
 {
-    if (fp == NULL)
-    {
-        return -2;
-    }
+    char *str=NULL;
     const int PAGE_SIZE = SHRT_MAX;
-    unsigned long long int file_size = 0;
-    *string = (char*)malloc(sizeof(char));
-    *string[0] = '\0';
+    size_t file_size = 0;
     char *tmp = (char*)malloc(PAGE_SIZE*sizeof(char));
     char *tmp1;
-    if (tmp == NULL)
+
+    str = (char*)malloc(sizeof(char));
+    str[0] = '\0';
+    
+    if (fp == NULL)
     {
         free(tmp);
-        return -1;
+        return OPEN_FILE_ERR;
     }
+
+    if ((tmp == NULL) || (str == NULL))
+    {
+        if (tmp != NULL)
+            free(tmp);
+        return ALLOCATE_MEM_ERR;
+    }
+
     while (1)
     {
         tmp1 = fgets(tmp,PAGE_SIZE,fp);
         if (tmp1 == NULL)
         {
             free(tmp);
+            *string=str;
             return 0;
         }
+
         file_size += strlen(tmp)+1;
-        *string = (char*)realloc(*string,file_size*sizeof(char));
-        if (*string == NULL)
+
+        str = (char*)realloc(str,file_size*sizeof(char));
+        if (str == NULL)
         {
             free(tmp);
-            return -1; 
+            return ALLOCATE_MEM_ERR;
         }
-        strcat(*string,tmp);
+        strcat(str,tmp);
     }
+
+    return UNEXPECTED_ERR;
 }
 
-int main()
+int main(int argc,char **argv)
 {
-    char **str = (char**)malloc(sizeof(char*));
-    FILE *fp = fopen("input_data.txt","r");
-    get_long_char(str,fp);
-    printf("%s",*str);
-    free(*str);
-    free(str);
+    char *str=NULL;
+    FILE *fp = fopen(argv[1],"r");
+    
+    while(get_long_char(&str,fp)==0)
+    {
+         printf("%s",str);
+         if(str!=NULL)
+         {
+            free(str);
+            str=NULL;
+         }
+    }
+
     fclose(fp);
+
     return 0;
 }
+
