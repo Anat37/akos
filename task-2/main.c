@@ -50,6 +50,7 @@ int main(){
         (min_i<52)?(int)'A'-UPPER:
             (min_i<62)?(int)'0'-NUMBER:(int)' '-SPACE;
     printf("Most rare symbol is: '%c'\n", min_i+shift);
+    free(c);
     free(times_repeated);
     return 0;
 }

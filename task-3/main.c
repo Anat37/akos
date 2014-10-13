@@ -10,9 +10,8 @@
 * retrun -2 if error with opening file
 */
 
-int get_long_char(char ** string,char* file_name )
+int get_long_char(char ** string,FILE* fp )
 {
-    FILE *fp = fopen(file_name,"r");
     if (fp == NULL)
     {
         return -2;
@@ -26,7 +25,6 @@ int get_long_char(char ** string,char* file_name )
     if (tmp == NULL)
     {
         free(tmp);
-        fclose(fp);
         return -1;
     }
     while (1)
@@ -35,7 +33,6 @@ int get_long_char(char ** string,char* file_name )
         if (tmp1 == NULL)
         {
             free(tmp);
-            fclose(fp);
             return 0;
         }
         file_size += strlen(tmp)+1;
@@ -43,7 +40,6 @@ int get_long_char(char ** string,char* file_name )
         if (*string == NULL)
         {
             free(tmp);
-            fclose(fp);
             return -1; 
         }
         strcat(*string,tmp);
@@ -53,9 +49,11 @@ int get_long_char(char ** string,char* file_name )
 int main()
 {
     char **str = (char**)malloc(sizeof(char*));
-    get_long_char(str,"input_data.txt");
+    FILE *fp = fopen("input_data.txt","r");
+    get_long_char(str,fp);
     printf("%s",*str);
     free(*str);
     free(str);
+    fclose(fp);
     return 0;
 }
