@@ -6,24 +6,26 @@
 #define OPEN_FILE_ERR -2
 #define UNEXPECTED_ERR -100
 #define ALLOCATE_MEM_ERR -1
-
+#define EOF_ERR -3
 
 int get_long_char(char ** string,FILE* fp )
 {
     char *str=NULL;
-    const int PAGE_SIZE = SHRT_MAX;
+    const int PAGE_SIZE = 100;
     size_t file_size = 0;
     char *tmp = (char*)malloc(PAGE_SIZE*sizeof(char));
     char *tmp1;
 
     str = (char*)malloc(sizeof(char));
-    str[0] = '\0';
-    
+    str[0] = '\0'; 
     if (fp == NULL)
     {
         free(tmp);
         return OPEN_FILE_ERR;
     }
+
+    if (feof(fp))
+        return EOF_ERR;
 
     if ((tmp == NULL) || (str == NULL))
     {
@@ -41,6 +43,9 @@ int get_long_char(char ** string,FILE* fp )
             *string=str;
             return 0;
         }
+        
+        if (feof(fp))
+            return EOF_ERR;
 
         file_size += strlen(tmp)+1;
 
@@ -61,14 +66,14 @@ int main(int argc,char **argv)
     char *str=NULL;
     FILE *fp = fopen(argv[1],"r");
     
-    while(get_long_char(&str,fp)==0)
+    while(!get_long_char(&str,fp))
     {
-         printf("%s",str);
-         if(str!=NULL)
-         {
+        printf("%s",str);
+        if(str!=NULL)
+        {
             free(str);
             str=NULL;
-         }
+        }
     }
 
     fclose(fp);
