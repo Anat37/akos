@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define STRINGLEN 256
+
 void close_files(int num,...)
 {
     int i;
@@ -24,19 +26,18 @@ char is_there(char* arr,int arrlen)
     return 0;
 }
 
-#define stringlen 256
 
 int main(int argv, char** argc)
 {
     FILE *in_file = fopen(argc[1],"r");
     FILE *out_file = fopen(argc[2],"w");
-    char *tmps = (char*)malloc(stringlen*sizeof(char));
+    char *tmps = (char*)malloc(STRINGLEN*sizeof(char));
     int mini = 0;
     int filepos = 0;
-    char *mins = (char*)malloc(stringlen*sizeof(char));
-    fgets(mins,stringlen,in_file);
+    char *mins = (char*)malloc(STRINGLEN*sizeof(char));
+    fgets(mins,STRINGLEN,in_file);
    
-    while (fgets(tmps,stringlen,in_file))
+    while (fgets(tmps,STRINGLEN,in_file))
     {
         filepos += 1;
         if (strcmp(mins,tmps) > 0)
@@ -46,7 +47,10 @@ int main(int argv, char** argc)
         }
     }
     printf("len = %i\nstring = %spos = %i\n",filelen+1,mins,mini);
-    
+   
+    /*
+     * С ansi и pedantic здесь не скомпилируется
+     */
     char *used = (char*)calloc(filepos,sizeof(char));
     used[mini] = 1;
     fprintf(out_file,"%s",mins);
