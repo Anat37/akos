@@ -20,13 +20,17 @@ int my_strcmp(char *first,char *second)
     return *first - *second;
 }
 
-int my_strlen(char *string)
+size_t my_strlen(char *string)
 {
-    int c = 0;
+    size_t c = 0;
     while (*string++)
     {
         c++;
     }
+    /*
+     * Вообще-то в этом месте принято возвращать
+     * длину строки, а не объём занятой ей памятью. 
+     */
     return c+1;
 }
 
