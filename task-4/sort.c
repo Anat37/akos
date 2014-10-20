@@ -27,11 +27,7 @@ size_t my_strlen(char *string)
     {
         c++;
     }
-    /*
-     * Вообще-то в этом месте принято возвращать
-     * длину строки, а не объём занятой ей памятью. 
-     */
-    return c+1;
+    return c;
 }
 
 int min(int* times)
@@ -209,7 +205,7 @@ int main(int argv, char** argc)
             filepos++;
             if (!(used[filepos]) && (my_strcmp(mins,tmps) > 0))
             {
-                mins = (char*)realloc(mins,my_strlen(tmps)*sizeof(char));
+                mins = (char*)realloc(mins,(my_strlen(tmps)+1)*sizeof(char));
                 my_strcpy(mins,tmps);
                 mini = filepos;
             }
