@@ -32,21 +32,15 @@ int min(int* times)
 {
     int i = 0;
     int min;
-    for(;(times[i]==0) && (i<256); i++)
-        ;
-    if (i<256)
-    {
-        min = times[i];
-    }else
-    {
-        min = 0;
-    }
+    while(times[i]==0)
+        i++;
+    min = times[i];
+
     for(;i<256;i++)
     {
         if ((times[i]<min)&&(times[i]>0))
         {
             min = times[i];
-        
         }
     }
     return min;
@@ -115,7 +109,7 @@ int my_getc(FILE *in)
 int get_string(char** string, FILE *in)
 {
     int c;
-    int strsize = 1;
+    int strsize = DEFAULT_STRING_SIZE;
     char *str = (char*)malloc(strsize*sizeof(char));
     int strpos = 0;
 
@@ -133,7 +127,7 @@ int get_string(char** string, FILE *in)
     }
     *string = NULL;
     
-    while( (c = my_getc(in)) != EOF )
+    while( fread(&c,sizeof(char),1,in) )
     {
         if (strpos == strsize)
         {
@@ -144,7 +138,6 @@ int get_string(char** string, FILE *in)
                 return MEMORY_ERR;
             }
         }
-
         str[strpos] = c;
         strpos++;
 
