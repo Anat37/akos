@@ -85,7 +85,7 @@ void print(int *times, int screen_width)
             printf("\n");
         }
     }
-    printf("There is %i symbols, and %i lines",sum,times[10]);
+    printf("There is %i symbols, and %i lines\n",sum,times[10]);
 
 }
 
@@ -153,17 +153,26 @@ int get_string(char** string, FILE *fp)
 
 int main(int argv, char** argc)
 {
-    FILE *in_file = fopen(argc[1],"r");
-    FILE *out_file = fopen(argc[2],"w");
+    FILE *in_file;
+    FILE *out_file;
     char *tmps = NULL;
     char *mins = NULL;
     short int *used = NULL;
     int *times = NULL;
-    int screen_width = atoi(argc[3]);
+    int screen_width;
 
     int mini;
     int filepos = 0;
     int filelen;
+
+    if(argv<4)
+    {
+        printf("Need more arguments");
+        return 0;
+    }
+    in_file = fopen(argc[1],"r");
+    out_file = fopen(argc[2],"w");
+    screen_width = atoi(argc[3]);
      
     while(!get_string(&tmps,in_file))
     {
