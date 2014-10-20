@@ -6,26 +6,28 @@
 #define FILE_ERR 3
 #define DEFAULT_STRING_SIZE 1
 
-
-void my_strcpy(char *to,char *from,int len)
+void my_strcpy(char *to,char *from)
 {
-    int i;
-    for(i=0;i<len;i++)
-    {
-        *to++=*from++;
-    }
+    while((*to++=*from++)!='\0')
+        ;
 }
 
-int my_strcmp(char *f,char *s,int lenf,int lens)
+int my_strcmp(char *first,char *second)
 {
-    int i;
-    for(i=0; (i<lenf)&&(i<lens); i++)
-        if (f[i] != s[i])
-        {
-            return f[i]-s[i];
-        }
-    return lenf-lens;
+    for(;*first==*second;first++,second++)
+        if (*first=='\0')
+            return 0;
+    return *first - *second;
+}
 
+size_t my_strlen(char *string)
+{
+    size_t c = 0;
+    while (*string++)
+    {
+        c++;
+    }
+    return c;
 }
 
 int min(int* times)
@@ -83,9 +85,8 @@ void print(int *times, int screen_width)
 
 }
 
-int analyze(char* str,int len,int **times)
+int analyze(char* str,int **times)
 {
-    int i;
     if(*times == NULL)
     {
         *times = (int*)calloc(256,sizeof(int));
@@ -94,36 +95,25 @@ int analyze(char* str,int len,int **times)
             return MEMORY_ERR;
         }
     }
-    
-    for(i=0;i<len;i++)
+    for(;*str!='\0';str++)
     {
-        (*times)[(unsigned char)str[i]]++;
+        (*times)[(unsigned int)*str]++;
     }
     return 0;
 }
 
-int my_getc(FILE *in)
-{
-    char c;
-    if(!fread(&c,sizeof(char),1,in))
-    {
-        return EOF;
-    }
-    return c;
-}
-
-int get_string(char** string, FILE *in)
+int get_string(char** string, FILE *fp)
 {
     int c;
     int strsize = 1;
-    char *str = (char*)malloc(strsize*sizeof(char));
-    int strpos = 0;
+    char *str = (char*)malloc((strsize+1)*sizeof(char));
+    int strpos = 1;
 
-    if(in == NULL)
+    if(fp == NULL)
     {
         return FILE_ERR;
     }
-    if(str == NULL)
+    if (str == NULL)
     {
         return MEMORY_ERR;
     }
@@ -133,104 +123,97 @@ int get_string(char** string, FILE *in)
     }
     *string = NULL;
     
-    while( (c = my_getc(in)) != EOF )
+    while( (c = getc(fp)) != EOF )
     {
         if (strpos == strsize)
         {
             strsize *= 2;
-            str = (char*)realloc(str,strsize*sizeof(char));
+            str = (char*)realloc(str,(strsize+1)*sizeof(char));
             if (str == NULL)
             {
                 return MEMORY_ERR;
             }
         }
-
-        str[strpos] = c;
+        str[strpos-1] = (char)c;
         strpos++;
-
-        if(c == '\n')
+        if (c == '\n')
         {
-            break;
+            str[strpos-1] = '\0';
+            *string = str;
+            return 0;
         }
     }
-    *string = str;
-    if (!strpos)
-    {
-        free(str);
-        *string = NULL;
-    }
-    return strpos;
+    free(str);
+    return END_OF_FILE;
 }
 
 int main(int argv, char** argc)
 {
-    FILE *in;
-    FILE *out;
+    FILE *in_file;
+    FILE *out_file;
     char *tmps = NULL;
     char *mins = NULL;
     short int *used = NULL;
     int *times = NULL;
     int screen_width;
-    
-    int len;
+
     int mini;
-    int minlen;
-    int filepos;
+    int filepos = 0;
+    int filelen;
 
     if(argv<4)
     {
         printf("Need more arguments");
         return 0;
     }
-    in = fopen(argc[1],"rb");
-    out = fopen(argc[2],"wb");
+    in_file = fopen(argc[1],"rb");
+    out_file = fopen(argc[2],"wb");
     screen_width = atoi(argc[3]);
-   
-    filepos = 0;
-    while( (len = get_string(&tmps,in)))
+     
+    while(!get_string(&tmps,in_file))
     {
         filepos += 1;
     }
-
+    
     used = (short int*)calloc(filepos,sizeof(short int));
+    filelen = filepos;
 
     while (1)
     {
-        fseek(in, 0, SEEK_SET);
+        fseek(in_file, 0, SEEK_SET);
         filepos = -1;
         
         do
         {
-            if(! (len = get_string(&mins,in)))
+            if(get_string(&mins,in_file))
                 {
                     print(times,screen_width);
                     free(times);
                     free(tmps);
                     free(mins);
                     free(used);
-                    fclose(in);
-                    fclose(out);
+                    fclose(in_file);
+                    fclose(out_file);
                     return 0;
                 }
             filepos++;
         } while(used[filepos] == 1);
         mini = filepos;
-        minlen = len;
         
-        while( (len = get_string(&tmps,in)) )
+        while(!get_string(&tmps,in_file))
         {
             filepos++;
-            if (!(used[filepos]) && (my_strcmp(mins,tmps,minlen,len) > 0))
+            if (!(used[filepos]) && (my_strcmp(mins,tmps) > 0))
             {
-                mins = (char*)realloc(mins,(len+1)*sizeof(char));
-                my_strcpy(mins,tmps,len);
+                mins = (char*)realloc(mins,(my_strlen(tmps)+1)*sizeof(char));
+                my_strcpy(mins,tmps);
                 mini = filepos;
-                minlen = len;
             }
         }
         used[mini] = 1;
-        fwrite(mins,sizeof(char),minlen,out);
-        analyze(mins,minlen,&times);
+        fprintf(out_file,"%s", mins);
+        analyze(mins,&times);
     }
+
     return 1; /*because we can't reach here*/
 }
