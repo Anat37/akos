@@ -166,8 +166,8 @@ int main(int argv, char** argc)
         printf("Need more arguments");
         return 0;
     }
-    in_file = fopen(argc[1],"r");
-    out_file = fopen(argc[2],"w");
+    in_file = fopen(argc[1],"rb");
+    out_file = fopen(argc[2],"wb");
     screen_width = atoi(argc[3]);
      
     while(!get_string(&tmps,in_file))
