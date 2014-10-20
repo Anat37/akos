@@ -9,8 +9,12 @@
 
 int my_getc(FILE *in)
 {
-    int c;
-    fread(&c,sizeof(int),1,in);
+    char c;
+    if(!read(&c,sizeof(char),1,in))
+    {
+        /* ПАТАМУЧТО */
+        return EOF;
+    }
     return c;
 }
 
