@@ -52,6 +52,11 @@ void print(int *times, int screen_width)
     int j = 0;
     int counter = 0;
     int sum = 0;
+    if (times == NULL)
+    {
+        printf("There is 0 symbols, and 0 lines\n");
+        return;
+    }
     for(;i<256;i++)
     {
         if (times[i])
@@ -70,11 +75,10 @@ void print(int *times, int screen_width)
             {
                 printf("*");
             }
-            printf("\n");
-        }
+            printf("\n"); 
+        } 
     }
     printf("There is %i symbols, and %i lines\n",sum,times[10]);
-
 }
 
 int analyze(char* str,int len,int **times)
