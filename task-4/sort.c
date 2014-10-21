@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <ctype.h>
 
 #define END_OF_FILE 1
 #define MEMORY_ERR 2
@@ -62,7 +63,7 @@ void print(int *times, int screen_width)
         if (times[i])
         {
             sum+=times[i];
-            if (i<33)
+            if (!isprint(i))
             {
                 printf("%i ",i);
                 
