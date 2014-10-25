@@ -29,22 +29,19 @@ int my_strcmp(char *f,char *s,int lenf,int lens)
 
 }
 
-int min(int* times)
+int max(int* times)
 {
     int i = 0;
-    int min;
-    while(times[i]==0)
-        i++;
-    min = times[i];
+    int max = 0;
 
-    for(;i<256;i++)
+    for(i=0;i<256;i++)
     {
-        if ((times[i]<min)&&(times[i]>0))
+        if (times[i]>max)
         {
-            min = times[i];
+            max = times[i];
         }
     }
-    return min;
+    return max;
 }
 
 void print(int *times, int screen_width)
@@ -65,14 +62,14 @@ void print(int *times, int screen_width)
             sum+=times[i];
             if (!isprint(i))
             {
-                printf("%i ",i);
+                printf("%3i ",i);
                 
             }else
             {
                 printf("'%c' ",i);
             }
-            counter = times[i]/min(times);
-            for(j = 0;(j<counter)&&(j<screen_width);j++)
+            counter = (int)(((double)times[i]*(screen_width-1))/max(times))+1;
+            for(j = 0;j<counter;j++)
             {
                 printf("*");
             }
