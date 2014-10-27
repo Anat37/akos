@@ -2,22 +2,22 @@
 #include <stdlib.h>
 
 typedef int Tdata;
-typedef struct Node list;
+typedef struct Node List;
 
-#define MEMORY_ERR 1
+#define MEMORY_ERR  1
 #define END_OF_LIST 2
-#define SUCCESS 0
+#define SUCCESS     0
 
 struct Node
 {
-    list *next;
+    List *next;
     Tdata data;
 };
 
-int lpush(list** l, Tdata data)
+int lpush(List** l, Tdata data)
 {
-    list *tmp = NULL;
-    tmp = (list*)malloc(sizeof(list));
+    List *tmp = NULL;
+    tmp = (List*)malloc(sizeof(List));
     if (tmp == NULL)
     {
         return MEMORY_ERR;
@@ -28,7 +28,7 @@ int lpush(list** l, Tdata data)
     {
         *l = tmp;
     }else{
-        list* i = *l;
+        List* i = *l;
         while (i->next!=NULL)
             i = i->next;
         i->next = tmp;
@@ -36,9 +36,9 @@ int lpush(list** l, Tdata data)
     return SUCCESS;
 }
 
-int lpop(list **l)
+int lpop(List **l)
 {
-    list *tmp = *l;
+    List *tmp = *l;
     Tdata t;
     if(tmp->next == NULL)
     {
@@ -58,11 +58,11 @@ int lpop(list **l)
     return t;
 }
 
-int linsert(list **l, int n, int data)
+int linsert(List **l, int n, int data)
 {
-    list *new = (list*)malloc(sizeof(list));
+    List *new = (List*)malloc(sizeof(List));
     int i = 1;
-    list *tmp;
+    List *tmp;
     if (new == NULL)
     {
         return MEMORY_ERR;
@@ -97,10 +97,10 @@ int linsert(list **l, int n, int data)
     return 0;
 }
 
-int ldelete(list** l, int n)
+int ldelete(List** l, int n)
 {
-    list *tmp = *l;
-    list *next = NULL;
+    List *tmp = *l;
+    List *next = NULL;
     int i = 0;
     if(tmp == NULL)  
     {
@@ -132,10 +132,10 @@ int ldelete(list** l, int n)
     return SUCCESS;
 }
 
-int lsearch(list *l, Tdata key)
+int lsearch(List *l, Tdata key)
 {
     int i = 0;
-    list *tmp = l;
+    List *tmp = l;
     
     if(tmp == NULL)
         return -1;
@@ -153,9 +153,9 @@ int lsearch(list *l, Tdata key)
     }
 }
 
-void lclear(list **l)
+void lclear(List **l)
 {
-    list *tmp = *l;
+    List *tmp = *l;
     while ((*l) != NULL)
     {
         tmp = (*l)->next;
@@ -165,12 +165,12 @@ void lclear(list **l)
     *l = NULL;
 }
 
-void lprint(list *l)
+void lprint(List *l)
 {
-    list *tmp = l;
+    List *tmp = l;
     if (tmp == NULL)
     {
-        printf("Empty");
+        printf("Empty\n");
         return;
     }
 
@@ -186,7 +186,7 @@ void lprint(list *l)
 /*
 int main()
 {
-    list *l = NULL;
+    List *l = NULL;
     lpush(&l,1);
     lpush(&l,2);
     lpush(&l,3);
