@@ -153,6 +153,18 @@ int lsearch(list *l, Tdata key)
     }
 }
 
+void lclear(list **l)
+{
+    list *tmp = *l;
+    while ((*l) != NULL)
+    {
+        tmp = (*l)->next;
+        free(*l);
+        *l = tmp;
+    }
+    *l = NULL;
+}
+
 void lprint(list *l)
 {
     list *tmp = l;
