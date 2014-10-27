@@ -98,21 +98,11 @@ int analyze(char* str,int len,int **times)
     return 0;
 }
 
-int my_getc(FILE *in)
-{
-    char c;
-    if(!fread(&c,sizeof(char),1,in))
-    {
-        return EOF;
-    }
-    return c;
-}
-
 int get_string(char** string, FILE *in)
 {
-    int c;
+    int c = '\0';
     int strsize = DEFAULT_STRING_SIZE;
-    char *str = (char*)malloc(strsize*sizeof(char));
+    char *str = (char*)malloc((strsize+1)*sizeof(char));
     int strpos = 0;
 
     if(in == NULL)
@@ -128,25 +118,27 @@ int get_string(char** string, FILE *in)
         free(*string);
     }
     *string = NULL;
-    
+     
     while( fread(&c,sizeof(char),1,in) )
     {
         if (strpos == strsize)
         {
             strsize *= 2;
-            str = (char*)realloc(str,strsize*sizeof(char));
+            str = (char*)realloc(str,(strsize+1)*sizeof(char));
             if (str == NULL)
             {
                 return MEMORY_ERR;
             }
         }
+        
         str[strpos] = c;
         strpos++;
-
+        
         if(c == '\n')
         {
             break;
         }
+        
     }
     *string = str;
     if (!strpos)
@@ -154,6 +146,7 @@ int get_string(char** string, FILE *in)
         free(str);
         *string = NULL;
     }
+    
     return strpos;
 }
 
@@ -180,13 +173,13 @@ int main(int argv, char** argc)
     in = fopen(argc[1],"rb");
     out = fopen(argc[2],"wb");
     screen_width = atoi(argc[3]);
-   
+    
     filepos = 0;
     while( (len = get_string(&tmps,in)))
     {
         filepos += 1;
     }
-
+    
     used = (short int*)calloc(filepos,sizeof(short int));
 
     while (1)
