@@ -14,3 +14,5 @@ int ldelete(list** l, int n);
 int lsearch(list *l, Tdata key);
 
 void lprint(list *l);
+
+void lclear(list **l);
