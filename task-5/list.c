@@ -181,27 +181,3 @@ void lprint(List *l)
     }
     return;
 }
-    
-
-/*
-int main()
-{
-    List *l = NULL;
-    lpush(&l,1);
-    lpush(&l,2);
-    lpush(&l,3);
-    lpush(&l,4);
-    lprint(l);
-    //linsert(&l,4,-1);
-    //ldelete(&l,0);
-    //ldelete(&l,0);
-    printf("\n");
-    //lprint(l);
-    //printf("%i\n",lsearch(l,10));
-    printf("%i\n",lpop(&l));
-    printf("%i\n",lpop(&l));
-    printf("%i\n",lpop(&l));
-    printf("%i\n",lpop(&l));
-    return 0;
-}
-*/

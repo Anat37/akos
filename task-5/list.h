@@ -1,18 +1,18 @@
 struct Node;
 
-typedef struct Node list;
+typedef struct Node List;
 typedef int Tdata;
 
-int lpush(list **l,Tdata data);
+int lpush(List **l,Tdata data);
 
-int lpop(list **l);
+int lpop(List **l);
 
-int linsert(list **l, int n, int data);
+int linsert(List **l, int n, int data);
 
-int ldelete(list** l, int n);
+int ldelete(List** l, int n);
 
-int lsearch(list *l, Tdata key);
+int lsearch(List *l, Tdata key);
 
-void lprint(list *l);
+void lprint(List *l);
 
-void lclear(list **l);
+void lclear(List **l);
