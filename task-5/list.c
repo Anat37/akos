@@ -1,50 +1,69 @@
-#include <stdio.h>
 #include <stdlib.h>
 
 typedef int Tdata;
-typedef struct Node List;
+typedef struct __List List;
+typedef struct __Node Node;
 
 #define MEMORY_ERR  1
 #define END_OF_LIST 2
 #define SUCCESS     0
 
-struct Node
+struct __Node
 {
-    List *next;
+    Node *next;
     Tdata data;
+}; 
+
+struct __List{
+    Node *head;
+    int len;
 };
 
-int lpush(List** l, Tdata data)
+void init(List* l)
 {
-    List *tmp = NULL;
-    tmp = (List*)malloc(sizeof(List));
+    l->len = 0;
+    l->head = NULL;
+}
+
+int lpush(List* l, Tdata data)
+{
+    Node *tmp = (Node*)malloc(sizeof(Node));
+    Node *i = NULL;
+    tmp->next = NULL;
+    tmp->data = data;
+    
     if (tmp == NULL)
     {
         return MEMORY_ERR;
     }
-    tmp->next = NULL;
-    tmp->data = data;
-    if (*l == NULL)
+    
+    if (l->len == 0)
     {
-        *l = tmp;
-    }else{
-        List* i = *l;
-        while (i->next!=NULL)
-            i = i->next;
-        i->next = tmp;
+        l->head = tmp;
+        l->len += 1;
+        return SUCCESS;
     }
+    
+    i = l->head;
+    while(i->next!=NULL)
+    {
+        i = i->next;
+    }
+    i->next = tmp;
+    l->len += 1;
     return SUCCESS;
 }
 
-int lpop(List **l)
+Tdata lpop(List *l)
 {
-    List *tmp = *l;
+    Node *tmp = l->head;
     Tdata t;
     if(tmp->next == NULL)
     {
         Tdata t = tmp->data;
         free(tmp);
-        *l = NULL;
+        l->head = NULL;
+        l->len -= 1;
         return t;
     }
     
@@ -55,33 +74,38 @@ int lpop(List **l)
     t = tmp->next->data;
     free(tmp->next);
     tmp->next = NULL;
+    l->len -= 1;
     return t;
 }
 
-int linsert(List **l, int n, int data)
+int linsert(List *l, int n, int data)
 {
-    List *new = (List*)malloc(sizeof(List));
+    Node *new = (Node*)malloc(sizeof(Node));
     int i = 1;
-    List *tmp;
-    if (new == NULL)
+    Node *tmp;
+    
+    if (new==NULL)
     {
         return MEMORY_ERR;
     }
-
+    
+    if(n > l->len)
+    {
+        return END_OF_LIST;
+    }
+    
     if (n==0)
     {
-        new -> next = *l;
+        new -> next = l->head;
         new -> data = data;
-        *l = new;
+        l->head = new;
+        l->len += 1;
+        return SUCCESS;
     }
 
-    tmp = *l;
+    tmp = l->head;
     while(1)
     {
-        if(tmp==NULL)
-        {
-            return END_OF_LIST;
-        }
         if(i==n)
         {
             break;
@@ -93,32 +117,32 @@ int linsert(List **l, int n, int data)
     new -> next = tmp->next;
     new -> data = data;
     tmp -> next = new;
-
-    return 0;
+    l->len += 1;
+    return SUCCESS;
 }
 
-int ldelete(List** l, int n)
+int ldelete(List* l, int n)
 {
-    List *tmp = *l;
-    List *next = NULL;
+    Node *tmp = l->head;
+    Node *next = NULL;
     int i = 0;
-    if(tmp == NULL)  
+    
+    if((tmp == NULL)||(n>=l->len))  
     {
         return END_OF_LIST;
     }
+
     if(n==0)
     {
-        next = (*l) -> next; 
-        free(*l);
-        *l = next;
+        next = l->head-> next; 
+        free(l->head);
+        l->head = next;
+        l->len -= 1;
         return SUCCESS;
     }
+
     while(1)
     {
-        if(tmp -> next == NULL)
-        {
-            return END_OF_LIST;
-        }
         if(i==n-1)
         {
             break;
@@ -129,18 +153,21 @@ int ldelete(List** l, int n)
     next = tmp->next->next;
     free(tmp->next);
     tmp->next = next;
+    l->len -= 1;
     return SUCCESS;
 }
 
-int lsearch(List *l, Tdata key)
+int lsearch(List l, Tdata key)
 {
     int i = 0;
-    List *tmp = l;
+    Node *tmp = l.head;
     
     if(tmp == NULL)
+    {
         return -1;
+    }
     
-    while((tmp!= NULL)&&(tmp->data != key))
+    while( (tmp!= NULL)&&(tmp->data != key) )
     {
         i++;
         tmp = tmp->next;
@@ -153,31 +180,15 @@ int lsearch(List *l, Tdata key)
     }
 }
 
-void lclear(List **l)
+void lclear(List *l)
 {
-    List *tmp = *l;
-    while ((*l) != NULL)
+    Node *tmp = l->head;
+    while ( l->head != NULL)
     {
-        tmp = (*l)->next;
-        free(*l);
-        *l = tmp;
+        tmp = l->head->next;
+        free(l->head);
+        l->head = tmp;
     }
-    *l = NULL;
-}
-
-void lprint(List *l)
-{
-    List *tmp = l;
-    if (tmp == NULL)
-    {
-        printf("Empty\n");
-        return;
-    }
-
-    while(tmp != NULL)
-    {
-        printf("%i \n", tmp->data);
-        tmp = tmp->next;
-    }
-    return;
+    l->head = NULL;
+    l->len = 0;
 }

@@ -1,25 +1,66 @@
 #include <stdio.h>
-#include "list.h"
+#include <stdlib.h>
+#include <string.h>
+#include "header.h"
 
 int main()
 {
-    List *l = NULL;
-    lpush(&l,1);
-    lpush(&l,2);
-    lpush(&l,3);
-    lpush(&l,4);
-    lprint(l);
-    printf("will delete 0s symbol\n");
-    ldelete(&l,0);
-    lprint(l);
-    printf("will insertn 10 in 0s pos\n");
-    linsert(&l,0, 10);
-    lprint(l);
-    printf("will pop\n");
-    printf("%i\n",lpop(&l));
-    printf("will search for 2\n");
-    printf("%i\n",lsearch(l,2));
+    List l;
+    init(&l);
+    char* command = (char*)malloc(10*sizeof(char));
+    int data,pos;
+    while(1)
+    {
+        printf("command > ");
+        scanf("%s",command);
+        
+        if(!strcmp(command,"exit"))
+        {
+            break;
+        }
+        
+        if(!strcmp(command,"push"))
+        {
+            printf(" data > ");
+            scanf("%i",&data);
+            lpush(&l,data);
+        }
+        
+        if(!strcmp(command,"pop"))
+        {
+            if (l.len!=0)
+            {
+                printf("%i\n",lpop(&l));
+            }else
+            {
+                printf("Empty\n");
+            }
+        }
+
+        if(!strcmp(command,"insert"))
+        {
+            printf(" data > ");
+            scanf("%i",&data);
+            printf(" position > ");
+            scanf("%i",&pos);
+            linsert(&l, pos, data);
+        }
+        
+        if(!strcmp(command,"delete"))
+        {
+            printf(" position > ");
+            scanf("%i",&pos);
+            ldelete(&l, pos);
+        }
+        
+        if(!strcmp(command,"search"))
+        {
+            printf(" data > ");
+            scanf("%i",&data);
+            printf("%i",lsearch(l,data));
+        }
+    }
     lclear(&l);
-    
+    free(command);
     return 0;
 }
