@@ -158,6 +158,31 @@ void cut_string(char *str,size_t pos,size_t len)
     str[i] = '\0';
 }
 
+void insert_vars(char* str)
+{
+    size_t i;
+    size_t len = strlen(str);
+    size_t pos;
+    size_t var = 0;
+    for(i=0;i<len;i++) 
+    {
+        if(str[i]=='$')
+        {
+            pos = i;
+            var = 1;
+        }
+        
+        if ( (str[i]==' ')&&var )
+        {
+            cut_string(str,pos,i-pos);
+            i=pos;
+            var = 0;
+        }
+    }
+    if (var)
+        cut_string(str,pos,i-pos);
+}
+
 /*
  * получение парметров для запуска программы argc и argv 
  */
@@ -200,7 +225,8 @@ void split(char* str, int *argc,char ***argv)
             {
                 (*argv)[(*argc)-1][size] = '\0';
                 (*argv)[(*argc)-1] = (char*)realloc((*argv)[(*argc)-1],sizeof(char)*(size+1));
-                
+                insert_vars( (*argv)[(*argc)-1] ); 
+
                 size = 0;
                 max_size = 1;
                 *argc = (*argc) + 1;
@@ -219,7 +245,10 @@ void split(char* str, int *argc,char ***argv)
         }        
     }
     if (size!=0)
+    {
         (*argv)[(*argc)-1][size] = '\0';
+        insert_vars( (*argv)[(*argc)-1] ); 
+    }
 }
 
 /*
@@ -241,8 +270,8 @@ int main()
             str = read_long_line(stdin);
             
             split(str,&argc,&argv);
-            //for(i=0;i<argc;i++)
-            //    printf("%i %s\n",i,argv[i]);
+            for(i=0;i<argc;i++)
+                printf("%i %s\n",i,argv[i]);
         }while( (!feof(stdin)) && (strcmp(str,"exit")) );
     }
     CATCH(MEMORY_ERR)
