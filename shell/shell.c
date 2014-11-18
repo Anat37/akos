@@ -181,6 +181,7 @@ void insert_vars(char* str)
     }
     if (var)
         cut_string(str,pos,i-pos);
+    }
 }
 
 /*
