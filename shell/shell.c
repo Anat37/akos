@@ -64,13 +64,22 @@ char* read_long_line(FILE* infp)
     char double_string = 0;
 
     if (infp == NULL)
+    {
+        free(str);
         THROW(FILE_ERR)
+    }
 
     if (str == NULL)
+    {
+        free(str);
         THROW(MEMORY_ERR)
+    }
     
     if (feof(infp))
+    {
+        free(str);
         return NULL;
+    }
 
     while(fread(&tmp,sizeof(char),1,infp))
     {
@@ -112,6 +121,7 @@ struct profile
 {
     char* name;
     char* directory;
+    Dict* dictionary;
 }user;
 
 void collect_data()
@@ -129,18 +139,23 @@ void collect_data()
     {
         user.name = read_long_line(fp);
     }
+    user.dictionary = dict_init();
+    dict_append(user.dictionary,"$USER",user.name);
     fclose(fp);
 }
-
-
 
 /*
  * подстановка переменных
  */
 
-void insert_vars(char** str)
+void cut_string(char *str,size_t pos,size_t len)
 {
-    printf("Trying to insert variables\n");
+    size_t i;
+    for(i = pos;str[i+len];i++)
+    {
+        str[i] = str[i+len];
+    }
+    str[i] = '\0';
 }
 
 /*
@@ -176,8 +191,6 @@ void split(char* str, int *argc,char ***argv)
         
         if( (str[i]=='\"')&&(!single_string) )
         {
-            if (double_string)
-                insert_vars(&(*argv)[(*argc)-1]);
             double_string = !double_string;
         }
 
@@ -205,7 +218,6 @@ void split(char* str, int *argc,char ***argv)
             (*argv)[(*argc)-1] = (char*)realloc( (*argv)[(*argc)-1],sizeof(char)*(max_size+1));
         }        
     }
-    
     if (size!=0)
         (*argv)[(*argc)-1][size] = '\0';
 }
@@ -229,10 +241,8 @@ int main()
             str = read_long_line(stdin);
             
             split(str,&argc,&argv);
-            printf("splited data:\n");
-            for(i=0;i<argc;i++)
-                printf("%i %s\n",i,argv[i]);
-
+            //for(i=0;i<argc;i++)
+            //    printf("%i %s\n",i,argv[i]);
         }while( (!feof(stdin)) && (strcmp(str,"exit")) );
     }
     CATCH(MEMORY_ERR)
@@ -244,6 +254,11 @@ int main()
         perror(FILE_ERR_TEXT);
     }
     ENDTRY
+    
+    for(i=0;i<argc;i++)
+        free(argv[i]);
+    free(argv);
 
+    dict_clear(&user.dictionary);
     return 0;
 }
