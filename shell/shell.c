@@ -70,10 +70,7 @@ char* read_long_line(FILE* infp)
     }
 
     if (str == NULL)
-    {
-        free(str);
         THROW(MEMORY_ERR)
-    }
     
     if (feof(infp))
     {
@@ -193,7 +190,7 @@ void split(char* str, int *argc,char ***argv)
     int size = 0,max_size = 1;
     int i;
     
-    for(i=strlen(str)-1;(str[i]==' ')&&(i>=0) ;i--)
+    for(i=strlen(str)-1;(i>=0)&&(str[i]==' ') ;i--)
         ;
     str[i+1] = '\0';
 
@@ -202,10 +199,10 @@ void split(char* str, int *argc,char ***argv)
         *argc = -1;
         return;
     }
-     
+    
     *argc = 1;
     *argv = (char**)malloc(sizeof(char*));
-    *argv[0] = (char*)malloc(sizeof(char)*(max_size+1));
+    (*argv)[0] = (char*)malloc(sizeof(char)*(max_size+1));
     
     for(i=0;str[i];i++)
     {
@@ -262,17 +259,34 @@ int main()
     char **argv;
     TRY
     {
-        collect_data();
+        
+        //collect_data();
         char *str = NULL;
-        do
+        while(1)
         {
             printf("%s$ ",user.name);
             str = read_long_line(stdin);
             
+            if (str==NULL)
+                break;   
+            
             split(str,&argc,&argv);
+            //for(i=0;i<argc;i++)
+            //    printf("%i %s\n",i,argv[i]);
+            
             for(i=0;i<argc;i++)
-                printf("%i %s\n",i,argv[i]);
-        }while( (!feof(stdin)) && (strcmp(str,"exit")) );
+                free(argv[i]);
+            if(argc>=0)
+                free(argv);
+            
+            if (!strcmp(str,"exit"))
+            {
+                free(str);
+                break;
+            }
+
+            free(str);
+        }
     }
     CATCH(MEMORY_ERR)
     {
@@ -284,10 +298,6 @@ int main()
     }
     ENDTRY
     
-    for(i=0;i<argc;i++)
-        free(argv[i]);
-    free(argv);
-
-    dict_clear(&user.dictionary);
+    //dict_clear(&user.dictionary);
     return 0;
 }
