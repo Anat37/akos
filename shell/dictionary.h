@@ -10,8 +10,8 @@ typedef struct Dictionary Dict;
 
 Dict* dict_init();
 
-void dict_append(Dict *d,char* key,char*value);
+void dict_append(Dict *,char*,char*);
 
-char* dict_get(Dict *d,char* key);
+char* dict_get(Dict *,char*);
 
-void dict_clear(Dict **d);
+void dict_clear(Dict **);
