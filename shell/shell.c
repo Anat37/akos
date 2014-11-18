@@ -107,6 +107,7 @@ char* read_long_line(FILE* infp)
     str = (char*)realloc(str,sizeof(char)*(pos+1));
     if (str == NULL)
         THROW(MEMORY_ERR)
+    
     return str;
 }
 
@@ -178,7 +179,6 @@ void insert_vars(char* str)
     }
     if (var)
         cut_string(str,pos,i-pos);
-    }
 }
 
 /*
@@ -268,12 +268,12 @@ int main()
             printf("%s$ ",user.name);
             str = read_long_line(stdin);
             
-            if (str==NULL)
+            if (feof(stdin))
                 break;   
             
             split(str,&argc,&argv);
-            //for(i=0;i<argc;i++)
-            //    printf("%i %s\n",i,argv[i]);
+            for(i=0;i<argc;i++)
+                printf("%i %s\n",i,argv[i]);
             
             for(i=0;i<argc;i++)
                 free(argv[i]);
