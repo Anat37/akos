@@ -187,10 +187,11 @@ void insert_vars(char* str)
 
 void split(char* str, int *argc,char ***argv)
 {
-    char single_string = 0,double_string = 0;
-    int size = 0,max_size = 1;
-    int i;
-    
+    for(i=0;i<argc;i++)
+        free(argv[i]);
+    if(argc>=0)
+        free(argv);
+
     for(i=strlen(str)-1;(i>=0)&&(str[i]==' ') ;i--)
         ;
     str[i+1] = '\0';
@@ -200,7 +201,10 @@ void split(char* str, int *argc,char ***argv)
         *argc = -1;
         return;
     }
-    
+    char single_string = 0,double_string = 0;
+    int size = 0,max_size = 1;
+    int i;
+
     *argc = 1;
     *argv = (char**)malloc(sizeof(char*));
     (*argv)[0] = (char*)malloc(sizeof(char)*(max_size+1));
@@ -272,14 +276,9 @@ int main()
                 break;   
             
             split(str,&argc,&argv);
-            for(i=0;i<argc;i++)
-                printf("%i %s\n",i,argv[i]);
-            
-            for(i=0;i<argc;i++)
-                free(argv[i]);
-            if(argc>=0)
-                free(argv);
-            
+            //for(i=0;i<argc;i++)
+            //    printf("%i %s\n",i,argv[i]);
+                                   
             if (!strcmp(str,"exit"))
             {
                 free(str);
@@ -288,6 +287,12 @@ int main()
 
             free(str);
         }
+
+        for(i=0;i<argc;i++)
+            free(argv[i]);
+        if(argc>=0)
+            free(argv);
+
     }
     CATCH(MEMORY_ERR)
     {
