@@ -22,15 +22,18 @@ void insert_vals(char **str)
     char *value;
     char *key;
     char *tmp;
-
+    
+    if(*str==NULL)
+        return;
     i = 0;
-    do
+    while(1)
     {
         if ( (*str)[i]=='$' )
         {
             pos = i;
             val = 1;
         }
+
         if (( ((*str)[i] == ' ')||( (*str)[i] == '\0') ) && val)
         {
             key = (char*)malloc(sizeof(char)*(i-pos+1));
@@ -39,24 +42,25 @@ void insert_vals(char **str)
             key[j-pos] = '\0';
             
             value = dict_get(d,key);
-            printf("key = %s value = %s\n",key,value);
-            
-            *str = (char*)realloc(*str,sizeof(char)*(strlen(*str)+ strlen(value) - strlen(key)));
+            *str = (char*)realloc(*str,sizeof(char)*(strlen(*str) + strlen(value) - strlen(key)+1));
             str_cut(*str,pos+1,i-pos-1);
-            (*str)[pos] = '\0';
             
             tmp = (char*)malloc(sizeof(char)*(strlen(*str)-pos));
-            for(j = pos+1;(*str)[j];j++)
-                tmp[j-pos-1] = (*str)[j];
-            tmp[j-pos-1] = '\0';
-
+            strcpy(tmp,&(*str)[pos+1]);
+            
+            (*str)[pos] = '\0';
             strcat(*str,value);
             strcat(*str,tmp);
             
+            free(tmp);
+            free(key);
             i = pos;
             val = 0;
         }
-    }while((*str)[i++]);
+        if((*str)[i] == '\0')
+            break;
+        i++;
+    }
 }
 
 int main()
@@ -70,5 +74,8 @@ int main()
     
     insert_vals(&str);
     printf("%s\n",str);
+    
+    free(str);
+    dict_clear(&d);
     return 0;
 }

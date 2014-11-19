@@ -187,9 +187,10 @@ void insert_vars(char* str)
 
 void split(char* str, int *argc,char ***argv)
 {
-    for(i=0;i<argc;i++)
+    int i;
+    for(i=0;i<*argc;i++)
         free(argv[i]);
-    if(argc>=0)
+    if(*argc>=0)
         free(argv);
 
     for(i=strlen(str)-1;(i>=0)&&(str[i]==' ') ;i--)
@@ -203,7 +204,6 @@ void split(char* str, int *argc,char ***argv)
     }
     char single_string = 0,double_string = 0;
     int size = 0,max_size = 1;
-    int i;
 
     *argc = 1;
     *argv = (char**)malloc(sizeof(char*));
@@ -260,8 +260,8 @@ void split(char* str, int *argc,char ***argv)
 int main()
 {
     int i;
-    int argc;
-    char **argv;
+    int argc = -1;
+    char **argv = NULL;
     TRY
     {
         
