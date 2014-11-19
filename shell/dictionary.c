@@ -61,7 +61,7 @@ char* dict_get(Dict *d,char* key)
         if ( !strcmp( (d->key)[i], key ) )
             return (d->value)[i];
     }
-    return NULL;
+    return "";
 }
 
 void dict_clear(Dict** d)
