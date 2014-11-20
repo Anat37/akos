@@ -146,7 +146,7 @@ void collect_data()
  * подстановка переменных
  */
 
-void str_cut(char* str,size_t pos,size_t len)
+void strcut(char* str,size_t pos,size_t len)
 {
     size_t i;
     for(i=pos;str[i+len];i++)
@@ -163,19 +163,27 @@ void insert_vars(char **str,Dict *d)
     char *value;
     char *key;
     char *tmp;
+    char single_string = 0;
+    char double_string = 0;
     
     if(*str==NULL)
         return;
     i = 0;
     while(1)
     {
-        if ( (*str)[i]=='$' )
+        if (( (*str)[i]=='$')&&(!single_string))
         {
             pos = i;
             val = 1;
         }
 
-        if (( ((*str)[i] == ' ')||( (*str)[i] == '\0') ) && val)
+        if (((*str)[i] == '\'')&&(!double_string))
+            single_string = !single_string;
+        
+        if (((*str)[i] == '\"')&&(!single_string))
+            double_string = !double_string;
+
+        if( (((*str)[i] == '\'') ||((*str)[i] == '\"') || ((*str)[i] == ' ')||( (*str)[i] == '\0') ) && val && (!single_string))
         {
             key = (char*)malloc(sizeof(char)*(i-pos+1));
             for(j=pos;j<i;j++)
@@ -184,7 +192,7 @@ void insert_vars(char **str,Dict *d)
             
             value = dict_get(d,key);
             *str = (char*)realloc(*str,sizeof(char)*(strlen(*str) + strlen(value) - strlen(key)+1));
-            str_cut(*str,pos+1,i-pos-1);
+            strcut(*str,pos+1,i-pos-1);
             
             tmp = (char*)malloc(sizeof(char)*(strlen(*str)-pos));
             strcpy(tmp,&(*str)[pos+1]);
@@ -200,6 +208,19 @@ void insert_vars(char **str,Dict *d)
         }
         if((*str)[i] == '\0')
             break;
+        
+        if (((*str)[i]=='\'')&&(single_string || !double_string))   
+        {
+            strcut(*str,i,1);
+            i--;
+        }
+
+        if (((*str)[i]=='\"')&&(double_string || !single_string))
+        {
+            strcut(*str,i,1);
+            i--;
+        }
+        
         i++;
     }
 }
@@ -246,6 +267,7 @@ void split(char* str, int *argc,char ***argv,Dict *d)
             {
                 (*argv)[(*argc)-1][size] = '\0';
                 (*argv)[(*argc)-1] = (char*)realloc((*argv)[(*argc)-1],sizeof(char)*(size+1));
+                insert_vars(&(*argv)[(*argc)-1],d);
 
                 size = 0;
                 max_size = 1;
@@ -267,6 +289,7 @@ void split(char* str, int *argc,char ***argv,Dict *d)
     if (size!=0)
     {
         (*argv)[(*argc)-1][size] = '\0';
+        insert_vars(&(*argv)[(*argc)-1],d);
     }
 }
 
