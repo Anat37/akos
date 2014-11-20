@@ -305,7 +305,7 @@ int main()
     TRY
     {
         
-        collect_data();
+        //collect_data();
         char *str = NULL;
         while(1)
         {
@@ -315,9 +315,9 @@ int main()
             if (feof(stdin))
                 break;   
             
-            split(str,&argc,&argv,user.dictionary);
-            for(i=0;i<argc;i++)
-                printf("%i %s\n",i,argv[i]);
+            //split(str,&argc,&argv,user.dictionary);
+            //for(i=0;i<argc;i++)
+                //printf("%i %s\n",i,argv[i]);
                                    
             /*if (!strcmp(str,"exit"))
             {
@@ -325,10 +325,10 @@ int main()
                 break;
             }*/
 
-            for(i=0;i<argc;i++)
-                free(argv[i]);
-            if(argc>=0)
-                free(argv);
+            //for(i=0;i<argc;i++)
+              //  free(argv[i]);
+            //if(argc>=0)
+              //  free(argv);
             free(str);
         }
     }
