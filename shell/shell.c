@@ -142,6 +142,12 @@ void collect_data()
     fclose(fp);
 }
 
+void free_data()
+{
+    dict_clear(&user.dictionary);
+    free(user.name);
+}
+
 /*
  * подстановка переменных
  */
@@ -209,13 +215,10 @@ void insert_vars(char **str,Dict *d)
         if((*str)[i] == '\0')
             break;
         
-        if (((*str)[i]=='\'')&&(single_string || !double_string))   
-        {
-            strcut(*str,i,1);
-            i--;
-        }
-
-        if (((*str)[i]=='\"')&&(double_string || !single_string))
+        if ((( (*str)[i]=='\'')
+            &&(single_string || !double_string))
+            ||(( (*str)[i]=='\"')
+            &&(double_string || !single_string)))
         {
             strcut(*str,i,1);
             i--;
@@ -312,8 +315,6 @@ int main()
             printf("%s$ ",user.name);
             str = read_long_line(stdin);
             
-            if (feof(stdin))
-                break;   
             
             //split(str,&argc,&argv,user.dictionary);
             //for(i=0;i<argc;i++)
@@ -330,6 +331,9 @@ int main()
             //if(argc>=0)
               //  free(argv);
             free(str);
+            
+            if (feof(stdin))
+                break;   
         }
     }
     CATCH(MEMORY_ERR)
@@ -342,6 +346,6 @@ int main()
     }
     ENDTRY
     
-    //dict_clear(&user.dictionary);
+    free_data();
     return 0;
 }
