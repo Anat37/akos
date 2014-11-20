@@ -146,52 +146,73 @@ void collect_data()
  * подстановка переменных
  */
 
-void cut_string(char *str,size_t pos,size_t len)
+void str_cut(char* str,size_t pos,size_t len)
 {
     size_t i;
-    for(i = pos;str[i+len];i++)
-    {
+    for(i=pos;str[i+len];i++)
         str[i] = str[i+len];
-    }
     str[i] = '\0';
 }
 
-void insert_vars(char* str)
+void insert_vars(char **str,Dict *d)
 {
-    size_t i;
-    size_t len = strlen(str);
     size_t pos;
-    size_t var = 0;
-    for(i=0;i<len;i++) 
+    size_t i;
+    size_t j;
+    char val = 0;
+    char *value;
+    char *key;
+    char *tmp;
+    
+    if(*str==NULL)
+        return;
+    i = 0;
+    while(1)
     {
-        if(str[i]=='$')
+        if ( (*str)[i]=='$' )
         {
             pos = i;
-            var = 1;
+            val = 1;
         }
-        
-        if ( (str[i]==' ')&&var )
+
+        if (( ((*str)[i] == ' ')||( (*str)[i] == '\0') ) && val)
         {
-            cut_string(str,pos,i-pos);
-            i=pos;
-            var = 0;
+            key = (char*)malloc(sizeof(char)*(i-pos+1));
+            for(j=pos;j<i;j++)
+                key[j-pos] = (*str)[j];
+            key[j-pos] = '\0';
+            
+            value = dict_get(d,key);
+            *str = (char*)realloc(*str,sizeof(char)*(strlen(*str) + strlen(value) - strlen(key)+1));
+            str_cut(*str,pos+1,i-pos-1);
+            
+            tmp = (char*)malloc(sizeof(char)*(strlen(*str)-pos));
+            strcpy(tmp,&(*str)[pos+1]);
+            
+            (*str)[pos] = '\0';
+            strcat(*str,value);
+            strcat(*str,tmp);
+            
+            free(tmp);
+            free(key);
+            i = pos;
+            val = 0;
         }
+        if((*str)[i] == '\0')
+            break;
+        i++;
     }
-    if (var)
-        cut_string(str,pos,i-pos);
 }
 
 /*
  * получение парметров для запуска программы argc и argv 
  */
 
-void split(char* str, int *argc,char ***argv)
+void split(char* str, int *argc,char ***argv,Dict *d)
 {
     int i;
-    for(i=0;i<*argc;i++)
-        free(argv[i]);
-    if(*argc>=0)
-        free(argv);
+    char single_string = 0,double_string = 0;
+    int size = 0,max_size = 1;
 
     for(i=strlen(str)-1;(i>=0)&&(str[i]==' ') ;i--)
         ;
@@ -202,8 +223,6 @@ void split(char* str, int *argc,char ***argv)
         *argc = -1;
         return;
     }
-    char single_string = 0,double_string = 0;
-    int size = 0,max_size = 1;
 
     *argc = 1;
     *argv = (char**)malloc(sizeof(char*));
@@ -227,7 +246,6 @@ void split(char* str, int *argc,char ***argv)
             {
                 (*argv)[(*argc)-1][size] = '\0';
                 (*argv)[(*argc)-1] = (char*)realloc((*argv)[(*argc)-1],sizeof(char)*(size+1));
-                insert_vars( (*argv)[(*argc)-1] ); 
 
                 size = 0;
                 max_size = 1;
@@ -249,7 +267,6 @@ void split(char* str, int *argc,char ***argv)
     if (size!=0)
     {
         (*argv)[(*argc)-1][size] = '\0';
-        insert_vars( (*argv)[(*argc)-1] ); 
     }
 }
 
@@ -265,7 +282,7 @@ int main()
     TRY
     {
         
-        //collect_data();
+        collect_data();
         char *str = NULL;
         while(1)
         {
@@ -275,24 +292,22 @@ int main()
             if (feof(stdin))
                 break;   
             
-            split(str,&argc,&argv);
-            //for(i=0;i<argc;i++)
-            //    printf("%i %s\n",i,argv[i]);
+            split(str,&argc,&argv,user.dictionary);
+            for(i=0;i<argc;i++)
+                printf("%i %s\n",i,argv[i]);
                                    
-            if (!strcmp(str,"exit"))
+            /*if (!strcmp(str,"exit"))
             {
                 free(str);
                 break;
-            }
+            }*/
 
+            for(i=0;i<argc;i++)
+                free(argv[i]);
+            if(argc>=0)
+                free(argv);
             free(str);
         }
-
-        for(i=0;i<argc;i++)
-            free(argv[i]);
-        if(argc>=0)
-            free(argv);
-
     }
     CATCH(MEMORY_ERR)
     {

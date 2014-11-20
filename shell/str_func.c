@@ -3,7 +3,6 @@
 #include <string.h>
 #include "dictionary.h"
 
-Dict *d;
 
 void str_cut(char* str,size_t pos,size_t len)
 {
@@ -13,7 +12,7 @@ void str_cut(char* str,size_t pos,size_t len)
     str[i] = '\0';
 }
 
-void insert_vals(char **str)
+void insert_vals(char **str,Dict *d)
 {
     size_t pos;
     size_t i;
@@ -65,14 +64,14 @@ void insert_vals(char **str)
 
 int main()
 {
-    d = dict_init();
+    Dict *d = dict_init();
     dict_append(d,"$USER","kozlovnikita");
     
     char* str = (char*)malloc(sizeof(char)*256);
     scanf("%[^\n]s",str);
     getchar();
     
-    insert_vals(&str);
+    insert_vals(&str,d);
     printf("%s\n",str);
     
     free(str);
