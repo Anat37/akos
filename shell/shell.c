@@ -48,9 +48,10 @@ static jmp_buf err;
 
 #define MEMORY_ERR 1
 #define FILE_ERR 2
+#define QUOTES_ERR 3
 #define MEMORY_ERR_TEXT "Some error with memory"
 #define FILE_ERR_TEXT "Some error with file access"
-
+#define QUOTES_ERR_TEXT "Some error with quotes"
 /*
  * считывает команду произвольного размера
  */ 
@@ -97,32 +98,25 @@ char* read_long_line(FILE* infp)
             double_string = (double_string)?0:1;
 
         if ( ( tmp=='\n' ) 
-                &&( !( single_string || double_string ) ) )
-        {
-            if ( ( pos==0 )||( ( pos>0 ) && ( str[pos-1] != '\\' ) ) )
-                break;
-
-            int count = 0;
-            int i;
-            for(i=pos-1; (i>=0)&&(str[i]=='\\') ;i--)
-                count++;
-            
-            if (count%2==0)
-                break;
-            else
-                printf(" > ");
-        }
+                &&( !( single_string || double_string ) )&&(!do_nothing) )
+            break;
 
         if ((tmp =='\n')&&(single_string || double_string))
             printf(" > ");
         
         if ((tmp == '#')&&(!do_nothing))
+        {
             dont_read = 1;
+            if (single_string || double_string)
+                THROW(QUOTES_ERR)
+        }
 
         if (((tmp != '\n') 
             ||((tmp == '\n') && (single_string || double_string)))
            &&(!dont_read))
+        {
             str[pos++] = tmp;
+        }
         
         do_nothing = 0;
         if (tmp == '\\')
@@ -324,15 +318,16 @@ void split(char* str, int *argc,char ***argv,Dict *d)
             continue;
         }
        
+        if ((str[i]!='\\') || ((str[i]=='\\')&&(do_nothing)))
+            (*argv)[(*argc)-1][size++] = str[i];
+       
         if ((str[i] == '\\')&&(!do_nothing))
         {
             do_nothing = 1;
         }else{
             do_nothing = 0;
-        }
-
-        (*argv)[(*argc)-1][size] = str[i];
-        size++;
+        } 
+       
         if (size==max_size)
         {
             max_size<<=1;
@@ -347,7 +342,7 @@ void split(char* str, int *argc,char ***argv,Dict *d)
 }
 
 /*
- *
+ * все функции работают сдесь 
  */
 
 int main()
@@ -383,10 +378,14 @@ int main()
     CATCH(MEMORY_ERR)
     {
         perror(MEMORY_ERR_TEXT);
-    f}
+    }
     CATCH(FILE_ERR)
     {
         perror(FILE_ERR_TEXT);
+    }
+    CATCH(QUOTES_ERR)
+    {
+        perror(QUOTES_ERR_TEXT);
     }
     ENDTRY
     free_data();
