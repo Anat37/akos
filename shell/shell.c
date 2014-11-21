@@ -63,6 +63,8 @@ char* read_long_line(FILE* infp)
     char single_string = 0;
     char double_string = 0;
     char do_nothing = 0;
+    char dont_read = 0;
+    
     if (infp == NULL)
     {
         free(str);
@@ -114,7 +116,12 @@ char* read_long_line(FILE* infp)
         if ((tmp =='\n')&&(single_string || double_string))
             printf(" > ");
         
-        if (tmp != '\n')
+        if ((tmp == '#')&&(!do_nothing))
+            dont_read = 1;
+
+        if (((tmp != '\n') 
+            ||((tmp == '\n') && (single_string || double_string)))
+           &&(!dont_read))
             str[pos++] = tmp;
         
         do_nothing = 0;
@@ -376,13 +383,12 @@ int main()
     CATCH(MEMORY_ERR)
     {
         perror(MEMORY_ERR_TEXT);
-    }
+    f}
     CATCH(FILE_ERR)
     {
         perror(FILE_ERR_TEXT);
     }
     ENDTRY
-    
     free_data();
     return 0;
 }
