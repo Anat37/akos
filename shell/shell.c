@@ -250,7 +250,7 @@ void insert_vars(char **str,Dict *d)
             i--;
         }
 
-        if (((*str)[i] == '\\')&&(!do_nothing))
+        if ((i>=0)&&((*str)[i] == '\\')&&(!do_nothing))
         {
             strcut(*str,i,1);
             do_nothing = 1;
