@@ -115,7 +115,11 @@ char* read_long_line(FILE* infp)
             ||((tmp == '\n') && (single_string || double_string)))
            &&(!dont_read))
         {
-            str[pos++] = tmp;
+            if ((tmp == 'n')&&(do_nothing))
+                str[pos] = '\n';
+            else
+                str[pos] = tmp;
+            pos++;
         }
         
         do_nothing = 0;
@@ -205,6 +209,7 @@ void insert_vars(char **str,Dict *d)
         {
             pos = i;
             val = 1;
+            continue;
         }
 
         if (((*str)[i] == '\'')&&(!double_string)&&(!do_nothing))
@@ -239,27 +244,29 @@ void insert_vars(char **str,Dict *d)
             free(key);
             i = pos;
             val = 0;
+            continue;
         }
         
         if((*str)[i] == '\0')
             break;
 
-         
         if (((((*str)[i]=='\'')&&(single_string || !double_string))
             ||(((*str)[i]=='\"')&&(double_string || !single_string)))
             &&(!do_nothing))
         {
             strcut(*str,i,1);
-            i--;
+            continue;
         }
 
-        if ((i>=0)&&((*str)[i] == '\\')&&(!do_nothing))
+        if (((*str)[i] == '\\')&&(!do_nothing))
         {
             strcut(*str,i,1);
             do_nothing = 1;
+            continue;
         }
         else
             do_nothing = 0;
+
         i++;
     }
 }
@@ -318,8 +325,7 @@ void split(char* str, int *argc,char ***argv,Dict *d)
             continue;
         }
        
-        if ((str[i]!='\\') || ((str[i]=='\\')&&(do_nothing)))
-            (*argv)[(*argc)-1][size++] = str[i];
+        (*argv)[(*argc)-1][size++] = str[i];
        
         if ((str[i] == '\\')&&(!do_nothing))
         {
