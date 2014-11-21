@@ -58,13 +58,14 @@ static jmp_buf err;
 
 char* read_long_line(FILE* infp)
 {
-    int max_size = 1,pos = 0;
+    int max_size = 1,
+        pos = 0;
     char *str = (char*)malloc(sizeof(char)*max_size);
-    char tmp;
-    char single_string = 0;
-    char double_string = 0;
-    char do_nothing = 0;
-    char dont_read = 0;
+    char tmp,
+         single_string = 0,
+         double_string = 0,
+         do_nothing = 0,
+         dont_read = 0;
     
     if (infp == NULL)
     {
@@ -83,7 +84,7 @@ char* read_long_line(FILE* infp)
 
     while(fread(&tmp,sizeof(char),1,infp))
     {
-        if(pos==max_size)
+        if (pos == max_size)
         {
             max_size<<=1;
             str = (char*)realloc(str,sizeof(char)*max_size);
@@ -91,20 +92,35 @@ char* read_long_line(FILE* infp)
                 THROW(MEMORY_ERR)
         }
 
-        if ( (tmp=='\'') && (!double_string) && !do_nothing )
+        if ((tmp == '\'')
+                &&(!double_string)
+                &&(!do_nothing))
+        {
             single_string = (single_string)?0:1;
-
-        if ( (tmp=='\"') && (!single_string) && !do_nothing )
-            double_string = (double_string)?0:1;
-
-        if ( ( tmp=='\n' ) 
-                &&( !( single_string || double_string ) )&&(!do_nothing) )
-            break;
-
-        if ((tmp =='\n')&&(single_string || double_string))
-            printf(" > ");
+        }
         
-        if ((tmp == '#')&&(!do_nothing))
+        if ((tmp == '\"')
+                &&(!single_string) 
+                &&(!do_nothing))
+        {
+            double_string = (double_string)?0:1;
+        }
+
+        if ((tmp == '\n') 
+                &&(!(single_string || double_string))
+                &&(!do_nothing))
+        {
+            break;
+        }
+
+        if ((tmp =='\n')
+                &&(single_string || double_string || do_nothing))
+        {
+            printf(" > ");
+        }
+        
+        if ((tmp == '#')
+                &&(!do_nothing))
         {
             dont_read = 1;
             if (single_string || double_string)
@@ -112,8 +128,9 @@ char* read_long_line(FILE* infp)
         }
 
         if (((tmp != '\n') 
-            ||((tmp == '\n') && (single_string || double_string)))
-           &&(!dont_read))
+                ||((tmp == '\n')
+                    &&(single_string || double_string)))
+            &&(!dont_read))
         {
             if ((tmp == 'n')&&(do_nothing))
                 str[pos] = '\n';
@@ -130,8 +147,9 @@ char* read_long_line(FILE* infp)
     str[pos] = '\0';
     str = (char*)realloc(str,sizeof(char)*(pos+1));
     if (str == NULL)
+    {
         THROW(MEMORY_ERR)
-    
+    }
     return str;
 }
 
@@ -142,37 +160,41 @@ char* read_long_line(FILE* infp)
 struct profile
 {
     char* name;
-    char* directory;
     Dict* dictionary;
-}user;
+};
 
-void collect_data()
+typedef struct profile Profile;
+
+Profile* collect_data()
 {
+    Profile* user = (Profile*)malloc(sizeof(Profile));
     FILE *fp = fopen("shprofile","r");
-    if(fp == NULL)
+    if (fp == NULL)
     {
         fp = fopen("shprofile","w");
         if (fp == NULL)
             THROW(FILE_ERR)
         printf("Enter your name > ");
-        user.name = (char*)malloc(sizeof(char)*256);
-        fgets(user.name,255,stdin);
-        if (user.name[strlen(user.name)-1] == '\n')
-            user.name[strlen(user.name)-1] = '\0';
-        fputs(user.name,fp);
+        user->name = (char*)malloc(sizeof(char)*256);
+        if (user->name == NULL)
+            THROW(MEMORY_ERR)
+        fgets(user->name,255,stdin);
+        if (user->name[strlen(user->name)-1] == '\n')
+            user->name[strlen(user->name)-1] = '\0';
+        fputs(user->name,fp);
     }else
-    {
-        user.name = read_long_line(fp);
-    }
-    user.dictionary = dict_init();
-    dict_append(user.dictionary,"$USER",user.name);
+        user->name = read_long_line(fp);
+    user->dictionary = dict_init();
+    dict_append(user->dictionary,"$USER",user->name);
     fclose(fp);
+    return user;
 }
 
-void free_data()
+void free_data(Profile *user)
 {
-    dict_clear(&user.dictionary);
-    free(user.name);
+    dict_clear(&user->dictionary);
+    free(user->name);
+    free(user);
 }
 
 /*
@@ -189,51 +211,66 @@ void strcut(char* str,int pos,int len)
 
 void insert_vars(char **str,Dict *d)
 {
-    int pos;
-    int i;
-    int j;
-    char val = 0;
-    char *value;
-    char *key;
-    char *tmp;
-    char single_string = 0;
-    char double_string = 0;
-    char do_nothing = 0;
+    int pos,
+        i,
+        j;
+    char *value,
+         *key,
+         *tmp,
+         single_string = 0,
+         double_string = 0,
+         do_nothing = 0,
+         val = 0;
 
-    if(*str==NULL)
+    if(*str == NULL)
         return;
     i = 0;
     while(1)
     {
-        if (( (*str)[i]=='$')&&(!single_string))
+        if (((*str)[i]=='$')
+                &&(!single_string))
         {
             pos = i;
             val = 1;
-            continue;
         }
 
-        if (((*str)[i] == '\'')&&(!double_string)&&(!do_nothing))
+        if (((*str)[i] == '\'')
+                &&(!double_string)
+                &&(!do_nothing))
+        {
             single_string = !single_string;
+        }
         
-        if (((*str)[i] == '\"')&&(!single_string)&&(!do_nothing))
+        if (((*str)[i] == '\"')
+                &&(!single_string)
+                &&(!do_nothing))
+        {
             double_string = !double_string;
+        }
 
-        if((((((*str)[i] == '\'') || ((*str)[i] == '\"'))&&(!do_nothing)) 
-                    || ((*str)[i] == ' ')
-                    ||( (*str)[i] == '\0')) 
-                &&val 
+        if ((((((*str)[i] == '\'')||((*str)[i] == '\"'))
+                        &&(!do_nothing)) 
+                    ||((*str)[i] == ' ')
+                    ||((*str)[i] == '\0')) 
+                &&(val) 
                 &&(!single_string))
         {
             key = (char*)malloc(sizeof(char)*(i-pos+1));
-            for(j=pos;j<i;j++)
+            if (key == NULL)
+                THROW(MEMORY_ERR)
+            for(j = pos;j<i;j++)
                 key[j-pos] = (*str)[j];
             key[j-pos] = '\0';
             
             value = dict_get(d,key);
             *str = (char*)realloc(*str,sizeof(char)*(strlen(*str) + strlen(value) - strlen(key)+1));
+            if (*str == NULL)
+                THROW(MEMORY_ERR)
             strcut(*str,pos+1,i-pos-1);
             
             tmp = (char*)malloc(sizeof(char)*(strlen(*str)-pos));
+            if (tmp == NULL)
+                THROW(MEMORY_ERR)
             strcpy(tmp,&(*str)[pos+1]);
             
             (*str)[pos] = '\0';
@@ -246,19 +283,19 @@ void insert_vars(char **str,Dict *d)
             val = 0;
             continue;
         }
-        
-        if((*str)[i] == '\0')
-            break;
 
-        if (((((*str)[i]=='\'')&&(single_string || !double_string))
-            ||(((*str)[i]=='\"')&&(double_string || !single_string)))
+        if (((((*str)[i]=='\'')
+                &&(single_string || !double_string))
+            ||(((*str)[i]=='\"')
+                &&(double_string || !single_string)))
             &&(!do_nothing))
         {
             strcut(*str,i,1);
             continue;
         }
 
-        if (((*str)[i] == '\\')&&(!do_nothing))
+        if (((*str)[i] == '\\')
+                &&(!do_nothing))
         {
             strcut(*str,i,1);
             do_nothing = 1;
@@ -266,7 +303,9 @@ void insert_vars(char **str,Dict *d)
         }
         else
             do_nothing = 0;
-
+        
+        if ((*str)[i] == '\0')
+            break;
         i++;
     }
 }
@@ -277,12 +316,15 @@ void insert_vars(char **str,Dict *d)
 
 void split(char* str, int *argc,char ***argv,Dict *d)
 {
-    int i;
-    char single_string = 0,double_string = 0;
-    int size = 0,max_size = 1;
-    char do_nothing = 0;
-    char dont_read = 0;
-    for(i=strlen(str)-1;(i>=0)&&(str[i]==' ') ;i--)
+    int i,
+        size = 0,
+        max_size = 1;
+    char single_string = 0,
+         double_string = 0,
+         do_nothing = 0,
+         dont_read = 0;
+    
+    for(i = strlen(str)-1;(i >= 0)&&(str[i] == ' ');i--)
         ;
     str[i+1] = '\0';
 
@@ -294,50 +336,67 @@ void split(char* str, int *argc,char ***argv,Dict *d)
 
     *argc = 1;
     *argv = (char**)malloc(sizeof(char*));
+    if (*argv == NULL)
+        THROW(MEMORY_ERR)
     (*argv)[0] = (char*)malloc(sizeof(char)*(max_size+1));
+    if ((*argv)[0] == NULL)
+        THROW(MEMORY_ERR)
     
     for(i=0;str[i];i++)
     {
-        if( (str[i] == '\'')&&(!double_string)&&(!do_nothing) )
+        if ((str[i] == '\'')
+                &&(!double_string)
+                &&(!do_nothing) )
         {
             single_string = !single_string;
         }
         
-        if( (str[i]=='\"')&&(!single_string)&&(!do_nothing) )
+        if ((str[i]=='\"')
+                &&(!single_string)
+                &&(!do_nothing) )
         {
             double_string = !double_string;
         }
 
-        if( (str[i] == ' ')&&(!(single_string || double_string))&&(!do_nothing) )
+        if ((str[i] == ' ')
+                &&(!(single_string || double_string))
+                &&(!do_nothing))
         {
-            if (size!=0)
+            if (size != 0)
             {
                 (*argv)[(*argc)-1][size] = '\0';
                 (*argv)[(*argc)-1] = (char*)realloc((*argv)[(*argc)-1],sizeof(char)*(size+1));
+                if((*argv)[(*argc)-1] == NULL)
+                    THROW(MEMORY_ERR)
                 insert_vars(&(*argv)[(*argc)-1],d);
 
                 size = 0;
                 max_size = 1;
                 *argc = (*argc) + 1;
                 *argv = (char**)realloc(*argv,sizeof(char*)*(*argc));
+                if (*argv == NULL)
+                    THROW(MEMORY_ERR)
                 (*argv)[(*argc)-1] = (char*)malloc(sizeof(char)*(max_size+1));
+                if ((*argv)[(*argc)-1] == NULL)
+                    THROW(MEMORY_ERR)
             }
             continue;
         }
        
         (*argv)[(*argc)-1][size++] = str[i];
        
-        if ((str[i] == '\\')&&(!do_nothing))
-        {
+        if ((str[i] == '\\')
+                &&(!do_nothing))
             do_nothing = 1;
-        }else{
+        else
             do_nothing = 0;
-        } 
        
-        if (size==max_size)
+        if (size == max_size)
         {
             max_size<<=1;
             (*argv)[(*argc)-1] = (char*)realloc( (*argv)[(*argc)-1],sizeof(char)*(max_size+1));
+            if ((*argv)[(*argc)-1] == NULL)
+                THROW(MEMORY_ERR)
         }        
     }
     if (size!=0)
@@ -353,26 +412,28 @@ void split(char* str, int *argc,char ***argv,Dict *d)
 
 int main()
 {
-    int i;
-    int argc = -1;
-    char **argv = NULL;
+    int i,
+        argc = -1;
+    Profile* user;
+    char **argv = NULL,
+         *str = NULL;
+    
     TRY
     {
-        
-        collect_data();
-        char *str = NULL;
+        user = collect_data(); 
+        str = NULL;
         while(1)
         {
-            printf("%s$ ",user.name);
+            printf("%s$ ",user->name);
             str = read_long_line(stdin);
             
-            split(str,&argc,&argv,user.dictionary);
-            for(i=0;i<argc;i++)
+            split(str,&argc,&argv,user->dictionary);
+            for(i=0;i < argc;i++)
                 printf("%i %s\n",i,argv[i]);
                                    
-            for(i=0;i<argc;i++)
+            for(i=0;i < argc;i++)
                 free(argv[i]);
-            if(argc>=0)
+            if (argc >= 0)
                 free(argv);
             
             free(str);
@@ -394,6 +455,6 @@ int main()
         perror(QUOTES_ERR_TEXT);
     }
     ENDTRY
-    free_data();
+    free_data(user);
     return 0;
 }
