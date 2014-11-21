@@ -239,9 +239,11 @@ void insert_vars(char **str,Dict *d)
             i = pos;
             val = 0;
         }
+        
         if((*str)[i] == '\0')
             break;
 
+         
         if (((((*str)[i]=='\'')&&(single_string || !double_string))
             ||(((*str)[i]=='\"')&&(double_string || !single_string)))
             &&(!do_nothing))
@@ -271,7 +273,7 @@ void split(char* str, int *argc,char ***argv,Dict *d)
     char single_string = 0,double_string = 0;
     int size = 0,max_size = 1;
     char do_nothing = 0;
-
+    char dont_read = 0;
     for(i=strlen(str)-1;(i>=0)&&(str[i]==' ') ;i--)
         ;
     str[i+1] = '\0';
@@ -355,7 +357,6 @@ int main()
         {
             printf("%s$ ",user.name);
             str = read_long_line(stdin);
-            
             
             split(str,&argc,&argv,user.dictionary);
             for(i=0;i<argc;i++)
