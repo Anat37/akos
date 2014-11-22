@@ -1,3 +1,8 @@
+#ifndef UNISTD
+    #include <unistd.h>
+    #define UNISTD
+#endif
+
 #ifndef STDIO
     #include <stdio.h>
     #define STDIO
@@ -397,7 +402,10 @@ void split(char* str, int *argc,char ***argv,Dict *d)
             (*argv)[(*argc)-1] = (char*)realloc( (*argv)[(*argc)-1],sizeof(char)*(max_size+1));
             if ((*argv)[(*argc)-1] == NULL)
                 THROW(MEMORY_ERR)
-        }        
+        }
+
+        *argv = (char**)realloc(*argv,sizeof(char**)*((*argc)+1));
+        (*argv)[*argc] = (char*)0;
     }
     if (size!=0)
     {
@@ -413,7 +421,9 @@ void split(char* str, int *argc,char ***argv,Dict *d)
 int main()
 {
     int i,
-        argc = -1;
+        argc = -1,
+        pid,
+        status;
     Profile* user;
     char **argv = NULL,
          *str = NULL;
@@ -426,20 +436,30 @@ int main()
         {
             printf("%s$ ",user->name);
             str = read_long_line(stdin);
-            
             split(str,&argc,&argv,user->dictionary);
-            for(i=0;i < argc;i++)
-                printf("%i %s\n",i,argv[i]);
-                                   
-            for(i=0;i < argc;i++)
+            
+            if (feof(stdin))
+            {
+                free(str);
+                break;  
+            }
+            
+            if((argc >= 0)&&((pid = fork())==0))
+            {
+                execvp(argv[0],argv);
+                printf("ERROR!\n");
+                return 0 ;
+            }else{
+                wait(&status);
+            }
+                         
+            for(i=0;i <= argc;i++)
                 free(argv[i]);
             if (argc >= 0)
                 free(argv);
             
             free(str);
             
-            if (feof(stdin))
-                break;   
         }
     }
     CATCH(MEMORY_ERR)
