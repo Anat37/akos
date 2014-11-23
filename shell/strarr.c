@@ -20,11 +20,19 @@ strarr* strarr_init()
 
 void strarr_push(strarr *tmp,char* str)
 {
-    if (tmp->argv == NULL)
-        tmp->argv = (char**)malloc(sizeof(char*));
+    tmp->argv = (char**)realloc(tmp->argv,sizeof(char*)*(tmp->argc + 1));
     tmp->argv[tmp->argc] = (char*)malloc(sizeof(char)*(strlen(str)+1));
     strcpy(tmp->argv[tmp->argc],str);
     tmp->argc += 1;
+}
+
+strarr* strarr_slice(strarr *tmp,int start,int end)
+{
+    strarr* result = strarr_init();
+    int i;
+    for(i = start;i<end;i++)
+        strarr_push(result,tmp->argv[i]);
+    return result;
 }
 
 void strarr_clear(strarr* tmp)
@@ -39,11 +47,24 @@ void strarr_clear(strarr* tmp)
 int main()
 {
     strarr *a = strarr_init();
-    strarr_push(a,"hello");
-    strarr_push(a,"world");
+    strarr_push(a,"1");
+    strarr_push(a,"2");
+    strarr_push(a,"3");
+    strarr_push(a,"4");
+    strarr_push(a,"5");
+    strarr_push(a,"6");
+    strarr_push(a,"7");
+    strarr_push(a,"8");
     int i;
     for(i=0;i<a->argc;i++)
         printf("%s\n",a->argv[i]);
+    int start = 0;
+    int end = a->argc;
+    strarr *b = strarr_slice(a,start,end);
+    for(i=0;i<b->argc;i++)
+        printf("%s\n",b->argv[i]);
+    
     strarr_clear(a);
+    strarr_clear(b);
     return 0;
 }
