@@ -27,8 +27,12 @@ strarr* strarr_init()
 void strarr_push(strarr *tmp,char* str)
 {
     tmp->argv = (char**)realloc(tmp->argv,sizeof(char*)*(tmp->argc + 1));
-    tmp->argv[tmp->argc] = (char*)malloc(sizeof(char)*(strlen(str)+1));
-    strcpy(tmp->argv[tmp->argc],str);
+    if (str==NULL)
+        tmp->argv[tmp->argc] = NULL;
+    else{
+        tmp->argv[tmp->argc] = (char*)malloc(sizeof(char)*(strlen(str)+1));
+        strcpy(tmp->argv[tmp->argc],str);
+    }
     tmp->argc += 1;
 }
 

@@ -419,10 +419,13 @@ strarr* split(char* str, Dict *d)
 
 int main()
 {
-    strarr* args;
+    strarr *args,
+           *tmp;
     int i,
         pid,
-        status;
+        status,
+        start,
+        end;
     Profile* user;
     char *str = NULL;
     
@@ -435,25 +438,37 @@ int main()
             printf("%s$ ",user->name);
             str = read_long_line(stdin);
             args = split(str,user->dictionary);
-            for(i=0;i<args->argc;i++)
-                printf("%i %s\n",i,args->argv[i]);
 
             if (feof(stdin))
             {
                 free(str);
                 break;  
             }
-            /* 
-            if((argc >= 0)&&((pid = fork())==0))
-            {
-                execvp(argv[0],argv);
-                printf("ERROR!\n");
-                return 0 ;
-            }else{
-                wait(&status);
-            }
-            */
             
+            start = 0;
+            end = 0;
+            while(end < args->argc)
+            {
+                if((!strcmp(args->argv[end],";"))||(end == args->argc-1))
+                {
+                   if ((strcmp(args->argv[end],";") != 0)&&(end == args->argc-1))
+                        end++;
+                    tmp = strarr_slice(args,start,end);
+                    strarr_push(tmp,NULL);
+                    start = end+1;
+                    if((pid = fork()) == 0)
+                    {
+                        execvp(tmp->argv[0],tmp->argv);
+                        printf("ERROR!\n");
+                        return 0;
+                    }else{
+                        wait(&status);
+                    }
+                    strarr_clear(tmp);
+                }
+                end++;
+            }
+
             strarr_clear(args);
             free(str);
         }
