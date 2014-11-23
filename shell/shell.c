@@ -24,7 +24,7 @@
 #endif
 
 #include "dictionary.h"
-
+#include "strarr.c"
 /* 
  * описание конструкции try catch
  */
@@ -320,12 +320,14 @@ void insert_vars(char **str,Dict *d)
  * получение парметров для запуска программы argc и argv 
  */
 
-void split(char* str, int *argc,char ***argv,Dict *d)
+strarr* split(char* str, Dict *d)
 {
+    strarr *res = strarr_init();
     int i,
         size = 0,
         max_size = 1;
-    char single_string = 0,
+    char *tmp = (char*)malloc(sizeof(char)*max_size),
+         single_string = 0,
          double_string = 0,
          do_nothing = 0,
          dont_read = 0;
@@ -339,18 +341,9 @@ void split(char* str, int *argc,char ***argv,Dict *d)
 
     if (str[0] == '\0')
     {    
-        *argc = -1;
-        return;
+        return res;
     }
 
-    *argc = 1;
-    *argv = (char**)malloc(sizeof(char*));
-    if (*argv == NULL)
-        THROW(MEMORY_ERR)
-    (*argv)[0] = (char*)malloc(sizeof(char)*(max_size+1));
-    if ((*argv)[0] == NULL)
-        THROW(MEMORY_ERR)
-    
     for(i=0;str[i];i++)
     {
         if ((str[i] == '\'')
@@ -373,43 +366,28 @@ void split(char* str, int *argc,char ***argv,Dict *d)
         {
             if (size != 0)
             {
-                (*argv)[(*argc)-1][size] = '\0';
-                (*argv)[(*argc)-1] = (char*)realloc((*argv)[(*argc)-1],sizeof(char)*(size+1));
-                if((*argv)[(*argc)-1] == NULL)
+                tmp[size] = '\0';
+                tmp = (char*)realloc(tmp,sizeof(char)*(size+1));
+                if (tmp == NULL)
                     THROW(MEMORY_ERR)
-                insert_vars(&(*argv)[(*argc)-1],d);
-
+                insert_vars(&tmp,d);
+                
+                strarr_push(res,tmp);
                 size = 0;
                 max_size = 1;
-                *argc = (*argc) + 1;
-                *argv = (char**)realloc(*argv,sizeof(char*)*(*argc));
-                if (*argv == NULL)
-                    THROW(MEMORY_ERR)
-                (*argv)[(*argc)-1] = (char*)malloc(sizeof(char)*(max_size+1));
-                if ((*argv)[(*argc)-1] == NULL)
+                free(tmp);
+                tmp = (char*)malloc(sizeof(char)*max_size);
+                if (tmp == NULL)
                     THROW(MEMORY_ERR)
             }
 
             if(str[i] == ';')
-            {
-                (*argv)[(*argc)-1] = (char*)realloc( (*argv)[(*argc)-1],sizeof(char)*2);
-                (*argv)[(*argc)-1][0] = ';';
-                (*argv)[(*argc)-1][1] = '\0';
-
-                *argc = (*argc) + 1;
-                *argv = (char**)realloc(*argv,sizeof(char*)*(*argc));
-                if (*argv == NULL)
-                    THROW(MEMORY_ERR)
-                (*argv)[(*argc)-1] = (char*)malloc(sizeof(char)*(max_size+1));
-                if ((*argv)[(*argc)-1] == NULL)
-                    THROW(MEMORY_ERR)
-
-            }
-
+                strarr_push(res,";");
+            
             continue;
         }
        
-        (*argv)[(*argc)-1][size++] = str[i];
+        tmp[size++] = str[i];
        
         if ((str[i] == '\\')
                 &&(!do_nothing))
@@ -420,19 +398,19 @@ void split(char* str, int *argc,char ***argv,Dict *d)
         if (size == max_size)
         {
             max_size<<=1;
-            (*argv)[(*argc)-1] = (char*)realloc( (*argv)[(*argc)-1],sizeof(char)*(max_size+1));
-            if ((*argv)[(*argc)-1] == NULL)
+            tmp = (char*)realloc(tmp ,sizeof(char)*(max_size+1));
+            if (tmp == NULL)
                 THROW(MEMORY_ERR)
         }
-
-        *argv = (char**)realloc(*argv,sizeof(char**)*((*argc)+1));
-        (*argv)[*argc] = (char*)0;
     }
     if (size!=0)
     {
-        (*argv)[(*argc)-1][size] = '\0';
-        insert_vars(&(*argv)[(*argc)-1],d);
+        tmp[size]  = '\0';
+        insert_vars(&tmp,d);
+        strarr_push(res,tmp);
     }
+    
+    return res;
 }
 
 /*
@@ -441,13 +419,12 @@ void split(char* str, int *argc,char ***argv,Dict *d)
 
 int main()
 {
+    strarr* args;
     int i,
-        argc = -1,
         pid,
         status;
     Profile* user;
-    char **argv = NULL,
-         *str = NULL;
+    char *str = NULL;
     
     TRY
     {
@@ -457,9 +434,9 @@ int main()
         {
             printf("%s$ ",user->name);
             str = read_long_line(stdin);
-            split(str,&argc,&argv,user->dictionary);
-            for(i=0;i<argc;i++)
-                printf("%i %s\n",i,argv[i]);
+            args = split(str,user->dictionary);
+            for(i=0;i<args->argc;i++)
+                printf("%i %s\n",i,args->argv[i]);
 
             if (feof(stdin))
             {
@@ -476,14 +453,9 @@ int main()
                 wait(&status);
             }
             */
-                         
-            for(i=0;i <= argc;i++)
-                free(argv[i]);
-            if (argc >= 0)
-                free(argv);
             
+            strarr_clear(args);
             free(str);
-            
         }
     }
     CATCH(MEMORY_ERR)
