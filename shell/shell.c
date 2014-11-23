@@ -268,6 +268,7 @@ void insert_vars(char **str,Dict *d)
             key[j-pos] = '\0';
             
             value = dict_get(d,key);
+            
             *str = (char*)realloc(*str,sizeof(char)*(strlen(*str) + strlen(value) - strlen(key)+1));
             if (*str == NULL)
                 THROW(MEMORY_ERR)
@@ -332,6 +333,9 @@ void split(char* str, int *argc,char ***argv,Dict *d)
     for(i = strlen(str)-1;(i >= 0)&&(str[i] == ' ');i--)
         ;
     str[i+1] = '\0';
+    
+    for(i = 0;str[i] == ' ';)
+        strcut(str,i,1);
 
     if (str[0] == '\0')
     {    
@@ -363,7 +367,7 @@ void split(char* str, int *argc,char ***argv,Dict *d)
             double_string = !double_string;
         }
 
-        if ((str[i] == ' ')
+        if (((str[i] == ' ')||(str[i] == ';'))
                 &&(!(single_string || double_string))
                 &&(!do_nothing))
         {
@@ -385,6 +389,23 @@ void split(char* str, int *argc,char ***argv,Dict *d)
                 if ((*argv)[(*argc)-1] == NULL)
                     THROW(MEMORY_ERR)
             }
+
+            if(str[i] == ';')
+            {
+                (*argv)[(*argc)-1] = (char*)realloc( (*argv)[(*argc)-1],sizeof(char)*2);
+                (*argv)[(*argc)-1][0] = ';';
+                (*argv)[(*argc)-1][1] = '\0';
+
+                *argc = (*argc) + 1;
+                *argv = (char**)realloc(*argv,sizeof(char*)*(*argc));
+                if (*argv == NULL)
+                    THROW(MEMORY_ERR)
+                (*argv)[(*argc)-1] = (char*)malloc(sizeof(char)*(max_size+1));
+                if ((*argv)[(*argc)-1] == NULL)
+                    THROW(MEMORY_ERR)
+
+            }
+
             continue;
         }
        
@@ -437,13 +458,15 @@ int main()
             printf("%s$ ",user->name);
             str = read_long_line(stdin);
             split(str,&argc,&argv,user->dictionary);
-            
+            for(i=0;i<argc;i++)
+                printf("%i %s\n",i,argv[i]);
+
             if (feof(stdin))
             {
                 free(str);
                 break;  
             }
-            
+            /* 
             if((argc >= 0)&&((pid = fork())==0))
             {
                 execvp(argv[0],argv);
@@ -452,6 +475,7 @@ int main()
             }else{
                 wait(&status);
             }
+            */
                          
             for(i=0;i <= argc;i++)
                 free(argv[i]);
