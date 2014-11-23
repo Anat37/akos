@@ -1,6 +1,12 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#ifndef STDLIB
+    #include <stdlib.h>
+    #define STDLIB
+#endif
+
+#ifndef STRING
+    #include <string.h>
+    #define STRING
+#endif
 
 struct strarr
 {
@@ -42,29 +48,4 @@ void strarr_clear(strarr* tmp)
         free(tmp->argv[i]);
     free(tmp->argv);
     free(tmp);
-}
-
-int main()
-{
-    strarr *a = strarr_init();
-    strarr_push(a,"1");
-    strarr_push(a,"2");
-    strarr_push(a,"3");
-    strarr_push(a,"4");
-    strarr_push(a,"5");
-    strarr_push(a,"6");
-    strarr_push(a,"7");
-    strarr_push(a,"8");
-    int i;
-    for(i=0;i<a->argc;i++)
-        printf("%s\n",a->argv[i]);
-    int start = 0;
-    int end = a->argc;
-    strarr *b = strarr_slice(a,start,end);
-    for(i=0;i<b->argc;i++)
-        printf("%s\n",b->argv[i]);
-    
-    strarr_clear(a);
-    strarr_clear(b);
-    return 0;
 }
