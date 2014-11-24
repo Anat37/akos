@@ -57,6 +57,11 @@ static jmp_buf err;
 #define MEMORY_ERR_TEXT "Some error with memory"
 #define FILE_ERR_TEXT "Some error with file access"
 #define QUOTES_ERR_TEXT "Some error with quotes"
+
+#define EXIT  2
+#define ERROR 1
+#define SUCCESS 0
+
 /*
  * считывает команду произвольного размера
  */ 
@@ -360,7 +365,7 @@ strarr* split(char* str, Dict *d)
             double_string = !double_string;
         }
 
-        if (((str[i] == ' ')||(str[i] == ';'))
+        if (((str[i] == ' ')||(str[i] == ';')||(str[i] == '<')||(str[i] == '>'))
                 &&(!(single_string || double_string))
                 &&(!do_nothing))
         {
@@ -381,8 +386,21 @@ strarr* split(char* str, Dict *d)
                     THROW(MEMORY_ERR)
             }
 
-            if(str[i] == ';')
+            if (str[i] == ';')
                 strarr_push(res,";");
+            if (str[i] == '<')
+                strarr_push(res,"<");
+            if (str[i] == '>')
+            {
+                if (str[i+1] == '>')
+                {
+                    i++;
+                    strarr_push(res,">>");
+                }else
+                {
+                     strarr_push(res,">");
+                }
+            }
             
             continue;
         }
@@ -414,18 +432,67 @@ strarr* split(char* str, Dict *d)
 }
 
 /*
+ * выполнение команды
+ */
+
+
+int execute(strarr *args,int start,int end)
+{
+    strarr* tmp;
+    
+    int pid = 0,
+        status = 0;
+
+    tmp = strarr_slice(args,start,end);
+    strarr_push(tmp,NULL);
+    
+    if((pid = fork()) == 0)
+    {
+        execvp(tmp->argv[0],tmp->argv);
+        strarr_clear(tmp);
+        return ERROR;
+    }else{
+        wait(&status);
+    }
+    
+    strarr_clear(tmp);
+    return SUCCESS;
+}
+
+int analyze(strarr* args)
+{
+    int start = 0,
+        end = 0,
+        status = 0;
+    
+    if ((args->argc > 0)&&(!strcmp(args->argv[0],"exit")))
+        return EXIT;
+
+    while(end < args->argc)
+    {
+        if((!strcmp(args->argv[end],";"))||(end == args->argc - 1))
+            {
+               if ((end == args->argc-1)&&(strcmp(args->argv[end],";")))
+                    end++;
+               
+               if (execute(args,start,end) != SUCCESS)
+                   return ERROR;
+               start = end+1;
+            }
+            end++;
+     }
+    return SUCCESS;
+}
+
+/*
  * все функции работают сдесь 
  */
 
 int main()
 {
-    strarr *args,
-           *tmp;
+    strarr *args;
     int i,
-        pid,
-        status,
-        start,
-        end;
+        status;
     Profile* user;
     char *str = NULL;
     
@@ -439,38 +506,28 @@ int main()
             str = read_long_line(stdin);
             args = split(str,user->dictionary);
 
-            if (feof(stdin))
-            {
-                free(str);
-                break;  
-            }
-            
-            start = 0;
-            end = 0;
-            while(end < args->argc)
-            {
-                if((!strcmp(args->argv[end],";"))||(end == args->argc-1))
-                {
-                   if ((strcmp(args->argv[end],";") != 0)&&(end == args->argc-1))
-                        end++;
-                    tmp = strarr_slice(args,start,end);
-                    strarr_push(tmp,NULL);
-                    start = end+1;
-                    if((pid = fork()) == 0)
-                    {
-                        execvp(tmp->argv[0],tmp->argv);
-                        printf("ERROR!\n");
-                        return 0;
-                    }else{
-                        wait(&status);
-                    }
-                    strarr_clear(tmp);
-                }
-                end++;
-            }
+            //for(i =0;i< args->argc;i++)
+              //  printf("%s\n",args->argv[i]);
 
+            status = analyze(args);   
+            
             strarr_clear(args);
             free(str);
+            
+            if (feof(stdin))
+                break;  
+            
+            if (status == EXIT)
+            {
+                printf("Bye Bye!\n");
+                break;
+            }
+
+            if (status == ERROR)
+            {
+                printf("Shit happends\n\tForest Ghump\n");
+                break;
+            }
         }
     }
     CATCH(MEMORY_ERR)
