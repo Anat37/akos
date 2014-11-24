@@ -1,5 +1,6 @@
 #ifndef UNISTD
     #include <unistd.h>
+    #include <sys/wait.h>
     #define UNISTD
 #endif
 
@@ -126,7 +127,7 @@ char* read_long_line(FILE* infp)
         if ((tmp =='\n')
                 &&(single_string || double_string || do_nothing))
         {
-            ;//printf(" > ");
+            ;/*printf(" > ");*/
         }
         
         if ((tmp == '#')
@@ -340,7 +341,6 @@ strarr* split(char* str, Dict *d)
          single_string = 0,
          double_string = 0,
          do_nothing = 0,
-         dont_read = 0,
          conveyor = 0;
     
     for(i = strlen(str)-1;(i >= 0)&&(str[i] == ' ');i--)
@@ -481,8 +481,7 @@ int execute(strarr *args,int start,int end)
 int analyze(strarr* args)
 {
     int start = 0,
-        end = 0,
-        status = 0;
+        end = 0;
     
     if ((args->argc > 0)&&(!strcmp(args->argv[0],"exit")))
         return EXIT;
