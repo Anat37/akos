@@ -200,7 +200,7 @@ Profile* collect_data()
     strcpy(user->name,"Nikita");
     user->dictionary = dict_init();
     dict_append(user->dictionary,"$USER",user->name);
-    //fclose(fp);
+    /*fclose(fp);*/
     return user;
 }
 
@@ -277,7 +277,7 @@ void insert_vars(char **str,Dict *d)
             key[j-pos] = '\0';
             
             value = dict_get(d,key);
-            //printf("%s %s\n",key,getenv(key));
+            /*printf("%s %s\n",key,getenv(key));*/
             
             *str = (char*)realloc(*str,sizeof(char)*(strlen(*str) + strlen(value) - strlen(key)+1));
             if (*str == NULL)
@@ -381,7 +381,7 @@ strarr* split(char* str, Dict *d)
                 tmp = (char*)realloc(tmp,sizeof(char)*(size+1));
                 if (tmp == NULL)
                     THROW(MEMORY_ERR)
-                //insert_vars(&tmp,d);
+                /*insert_vars(&tmp,d);*/
                 
                 strarr_push(res,tmp);
                 size = 0;
@@ -443,7 +443,7 @@ strarr* split(char* str, Dict *d)
     if (size!=0)
     {
         tmp[size]  = '\0';
-        //insert_vars(&tmp,d);
+        /*insert_vars(&tmp,d);*/
         strarr_push(res,tmp);
     }
     
@@ -521,14 +521,14 @@ int main()
         str = NULL;
         while(1)
         {
-            //printf("%s$ ",user->name);
+            /*printf("%s$ ",user->name);*/
             str = read_long_line(stdin);
             args = split(str,user->dictionary);
 
             for(i =0;i< args->argc;i++)
                 printf("%s\n",args->argv[i]);
 
-            //status = analyze(args);   
+            /*status = analyze(args);*/  
             status = 0;
 
             strarr_clear(args);
@@ -539,7 +539,7 @@ int main()
             
             if (status == EXIT)
             {
-                //printf("Bye Bye!\n");
+                /*printf("Bye Bye!\n");*/
                 break;
             }
 
