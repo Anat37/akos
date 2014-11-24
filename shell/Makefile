@@ -1,6 +1,5 @@
 CC=gcc
 CFLAGS= -Wall -ansi -pedantic -g
-LIBDIR= -L.
 
 all: shell
 
@@ -12,9 +11,8 @@ libstrarr.a: strarr.o
 	ar rc libstrarr.a strarr.o
 	ranlib libstrarr.a
 
-
-shell: libdict.a libstrarr.a shell.o
-	$(CC) $(CFLAGS) -o shell $(LIBDIR) -ldict -lstrarr shell.o
+shell: libdict.a libstrarr.a
+	$(CC) $(CFLAGS) -o shell shell.c libdict.a libstrarr.a
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $^
