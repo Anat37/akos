@@ -24,7 +24,7 @@
 #endif
 
 #include "dictionary.h"
-#include "strarr.c"
+#include "strarr.h"
 /* 
  * описание конструкции try catch
  */
@@ -178,7 +178,7 @@ typedef struct profile Profile;
 Profile* collect_data()
 {
     Profile* user = (Profile*)malloc(sizeof(Profile));
-    FILE *fp = fopen("shprofile","r");
+    /*FILE *fp = fopen("shprofile","r");
     if (fp == NULL)
     {
         fp = fopen("shprofile","w");
@@ -194,9 +194,13 @@ Profile* collect_data()
         fputs(user->name,fp);
     }else
         user->name = read_long_line(fp);
+        */
+    
+    user->name = (char*)malloc(sizeof(char)*256);
+    strcpy(user->name,"Nikita");
     user->dictionary = dict_init();
     dict_append(user->dictionary,"$USER",user->name);
-    fclose(fp);
+    //fclose(fp);
     return user;
 }
 
@@ -268,11 +272,12 @@ void insert_vars(char **str,Dict *d)
             key = (char*)malloc(sizeof(char)*(i-pos+1));
             if (key == NULL)
                 THROW(MEMORY_ERR)
-            for(j = pos;j<i;j++)
-                key[j-pos] = (*str)[j];
+            for(j = pos+1;j<i;j++)
+                key[j-pos-1] = (*str)[j];
             key[j-pos] = '\0';
             
             value = dict_get(d,key);
+            printf("%s %s\n",key,getenv(key));
             
             *str = (char*)realloc(*str,sizeof(char)*(strlen(*str) + strlen(value) - strlen(key)+1));
             if (*str == NULL)
@@ -335,7 +340,8 @@ strarr* split(char* str, Dict *d)
          single_string = 0,
          double_string = 0,
          do_nothing = 0,
-         dont_read = 0;
+         dont_read = 0,
+         conveyor = 0;
     
     for(i = strlen(str)-1;(i >= 0)&&(str[i] == ' ');i--)
         ;
@@ -364,8 +370,8 @@ strarr* split(char* str, Dict *d)
         {
             double_string = !double_string;
         }
-
-        if (((str[i] == ' ')||(str[i] == ';')||(str[i] == '<')||(str[i] == '>'))
+       
+        if (((str[i] == ' ')||(str[i] == ';')||(str[i] == '<')||(str[i] == '>')||(str[i] == '|')||((str[i] == '&')&&(conveyor)))
                 &&(!(single_string || double_string))
                 &&(!do_nothing))
         {
@@ -385,11 +391,24 @@ strarr* split(char* str, Dict *d)
                 if (tmp == NULL)
                     THROW(MEMORY_ERR)
             }
+            
+            if (str[i] == '&')
+            {
+                strarr_push(res,"&");
+            }
+            
+            if (str[i] == '|')
+            {
+                strarr_push(res,"|");
+                conveyor = 1;
+            }
 
             if (str[i] == ';')
                 strarr_push(res,";");
+
             if (str[i] == '<')
                 strarr_push(res,"<");
+            
             if (str[i] == '>')
             {
                 if (str[i+1] == '>')
@@ -506,11 +525,12 @@ int main()
             str = read_long_line(stdin);
             args = split(str,user->dictionary);
 
-            //for(i =0;i< args->argc;i++)
-              //  printf("%s\n",args->argv[i]);
+            for(i =0;i< args->argc;i++)
+                printf("%s\n",args->argv[i]);
 
-            status = analyze(args);   
-            
+            //status = analyze(args);   
+            status = 0;
+
             strarr_clear(args);
             free(str);
             
