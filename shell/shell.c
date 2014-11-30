@@ -351,7 +351,8 @@ strarr* split(char* str, Dict *d)
         strcut(str,i,1);
 
     if (str[0] == '\0')
-    {    
+    {   
+        free(tmp);
         return res;
     }
 
@@ -446,7 +447,7 @@ strarr* split(char* str, Dict *d)
         /*insert_vars(&tmp,d);*/
         strarr_push(res,tmp);
     }
-    
+    free(tmp);
     return res;
 }
 
@@ -516,21 +517,25 @@ int main()
     
     TRY
     {
-        user = collect_data(); 
+        user = collect_data();
+        
         str = NULL;
         while(1)
         {
             /*printf("%s$ ",user->name);*/
             str = read_long_line(stdin);
+            
             args = split(str,user->dictionary);
 
             for(i =0;i< args->argc;i++)
                 printf("%s\n",args->argv[i]);
-
+            
+            
             /*status = analyze(args);*/  
             status = 0;
 
             strarr_clear(args);
+            
             free(str);
             
             if (feof(stdin))
@@ -563,5 +568,6 @@ int main()
     }
     ENDTRY
     free_data(user);
+     
     return 0;
 }
