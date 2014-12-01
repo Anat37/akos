@@ -610,7 +610,7 @@ int main()
 
             if (status == ERROR)
             {
-                printf("Shit happends\n\tForest Ghump\n");
+                printf("Shit happends\n\tForrest Gump\n");
             }
         }
     }
