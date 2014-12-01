@@ -497,7 +497,6 @@ int analyze(strarr* args)
         i = 0,
         delimeter = 0,
         conveyor = 0,
-        and = 0,
         last_conveyor = 0,
         end_of_args = 0;
 
@@ -515,12 +514,10 @@ int analyze(strarr* args)
         return EXIT; 
     }
     
-    
     while(end < args->argc)
     {
         if ((!strcmp(args->argv[end],"&"))&&(!last_conveyor))
         {
-            and = 1;
             free(prog);
             return ERROR;
         }
@@ -534,46 +531,41 @@ int analyze(strarr* args)
         if (end == args->argc - 1)
             end_of_args = 1;
         
-        if (delimeter||conveyor||end_of_args)
+        if(delimeter||conveyor||end_of_args)
             {
-               if ((end_of_args)&&(!delimeter)&&(!conveyor))
+                if ((end_of_args)&&(!delimeter)&&(!conveyor))
                     end++;
                 
-               if (conveyor && (prog->args == NULL))
-                   return ERROR;
-               
-               if (conveyor && (prog->args->argc == 0))
-                   return ERROR;
-               
-               if (prog->args != NULL)
-                   strarr_clear(prog->args);
-              
-               if (start<end)
-               {
-               prog->args = strarr_slice(args,start,end);
-               
-               printf("name = %s\n",prog->args->argv[0]);
-               for(i = 0;i < prog->args->argc;i++)
-                   printf("arg[%i] = %s\n",i,prog->args->argv[i]);
-               }
-                /*if (execute(args,start,end) != SUCCESS)
-                   return ERROR;
-                   */
-
-                if (conveyor)
-                    last_conveyor = 1;
-                else
-                    last_conveyor = 0;
-               
+                if(start<end)
+                {
+                    prog->args = strarr_slice(args,start,end);
+                    if ((conveyor||last_conveyor)&&((prog->args->argc == 0)||(end_of_args)))
+                    {
+                        strarr_clear(prog->args);
+                        free(prog);
+                        return ERROR;
+                    }
+                
+                    printf("name = %s\n",prog->args->argv[0]);
+                    for(i = 0;i < prog->args->argc;i++)
+                        printf("arg[%i] = %s\n",i,prog->args->argv[i]);
+                    
+                    strarr_clear(prog->args);
+                }
+                /*
+                if (execute(args,start,end) != SUCCESS)
+                   return ERROR;   
+                */
+                last_conveyor = conveyor;
                 delimeter = 0;
-                conveyor = 0;
                 end_of_args = 0;
+                conveyor = 0;
                 start = end+1;
             }
-            end++;
+
+        end++;
     }
-    if (prog->args!=NULL)
-        strarr_clear(prog->args);   
+    
     free(prog);
     return SUCCESS;
 }
@@ -602,7 +594,7 @@ int main()
             args = split(str,user->dictionary);
             
             status = analyze(args);  
-
+            
             strarr_clear(args);
             
             free(str);
