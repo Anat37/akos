@@ -76,23 +76,17 @@ char* read_long_line(FILE* infp)
          single_string = 0,
          double_string = 0,
          do_nothing = 0,
-         dont_read = 0;
+         comment = 0;
+    
+    if (str == NULL)
+        THROW(MEMORY_ERR)
     
     if (infp == NULL)
     {
         free(str);
         THROW(FILE_ERR)
     }
-
-    if (str == NULL)
-        THROW(MEMORY_ERR)
     
-    if (feof(infp))
-    {
-        free(str);
-        return NULL;
-    }
-
     while(fread(&tmp,sizeof(char),1,infp))
     {
         if (pos == max_size)
@@ -127,21 +121,20 @@ char* read_long_line(FILE* infp)
         if ((tmp =='\n')
                 &&(single_string || double_string || do_nothing))
         {
-            ;/*printf(" > ");*/
+            printf(" > ");
         }
         
         if ((tmp == '#')
-                &&(!do_nothing))
+                &&(!do_nothing)
+                &&(!(single_string||double_string)))
         {
-            dont_read = 1;
-            if (single_string || double_string)
-                THROW(QUOTES_ERR)
+            comment = 1;
         }
 
         if (((tmp != '\n') 
                 ||((tmp == '\n')
                     &&(single_string || double_string)))
-            &&(!dont_read))
+            &&(!comment))
         {
             if ((tmp == 'n')&&(do_nothing))
                 str[pos] = '\n';
@@ -150,9 +143,10 @@ char* read_long_line(FILE* infp)
             pos++;
         }
         
-        do_nothing = 0;
-        if (tmp == '\\')
+        if ((tmp == '\\')&&(!do_nothing))
             do_nothing = 1;
+        else
+            do_nothing = 0;
     }
 
     str[pos] = '\0';
@@ -179,29 +173,10 @@ typedef struct profile Profile;
 Profile* collect_data()
 {
     Profile* user = (Profile*)malloc(sizeof(Profile));
-    /*FILE *fp = fopen("shprofile","r");
-    if (fp == NULL)
-    {
-        fp = fopen("shprofile","w");
-        if (fp == NULL)
-            THROW(FILE_ERR)
-        printf("Enter your name > ");
-        user->name = (char*)malloc(sizeof(char)*256);
-        if (user->name == NULL)
-            THROW(MEMORY_ERR)
-        fgets(user->name,255,stdin);
-        if (user->name[strlen(user->name)-1] == '\n')
-            user->name[strlen(user->name)-1] = '\0';
-        fputs(user->name,fp);
-    }else
-        user->name = read_long_line(fp);
-        */
-    
     user->name = (char*)malloc(sizeof(char)*256);
-    strcpy(user->name,"Nikita");
+    strcpy(user->name,getenv("USER"));
     user->dictionary = dict_init();
     dict_append(user->dictionary,"$USER",user->name);
-    /*fclose(fp);*/
     return user;
 }
 
@@ -349,8 +324,10 @@ strarr* split(char* str, Dict *d)
         ;
     str[i+1] = '\0';
     
-    for(i = 0;str[i] == ' ';)
-        strcut(str,i,1);
+    for(i = 0;str[i] == ' ';i++)
+        ;
+    strcut(str,0,i);
+
     if (str[0] == '\0')
     {  
         free(tmp);
@@ -577,7 +554,8 @@ int analyze(strarr* args)
 int main()
 {
     strarr *args;
-    int status;
+    int status,
+        i;
     Profile* user;
     char *str = NULL;
     
@@ -588,19 +566,24 @@ int main()
         str = NULL;
         while(1)
         {
-            /*printf("%s$ ",user->name);*/
+            printf("%s$ ",user->name);
             str = read_long_line(stdin);
             
             args = split(str,user->dictionary);
             
-            status = analyze(args);  
+            for(i=0;i<args->argc;i++)
+                printf("arg[%i] = %s\n",i,args->argv[i]);
+            
             
             strarr_clear(args);
             
             free(str);
-            
+
             if (feof(stdin))
                 break;  
+            
+            /*
+            status = analyze(args);  
             
             if (status == EXIT)
             {
@@ -612,6 +595,7 @@ int main()
             {
                 printf("Shit happends\n\tForrest Gump\n");
             }
+            */
         }
     }
     CATCH(MEMORY_ERR)

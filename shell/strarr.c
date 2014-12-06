@@ -47,9 +47,9 @@ strarr* strarr_slice(strarr *tmp,int start,int end)
 
 void strarr_clear(strarr* tmp)
 {
+    int i;
     if (tmp==NULL)
         return;
-    int i;
     for(i = 0;i < tmp->argc;i++)
         free(tmp->argv[i]);
     free(tmp->argv);
