@@ -63,6 +63,9 @@ static jmp_buf err;
 #define ERROR 1
 #define SUCCESS 0
 
+#define APPEND 1
+#define REWRITE 2
+
 /*
  * считывает команду произвольного размера
  */ 
@@ -317,8 +320,7 @@ strarr* split(char* str, Dict *d)
     char *tmp = (char*)malloc(sizeof(char)*max_size),
          single_string = 0,
          double_string = 0,
-         do_nothing = 0,
-         conveyor = 0;
+         do_nothing = 0;
     
     for(i = strlen(str)-1;(i >= 0)&&(str[i] == ' ');i--)
         ;
@@ -350,7 +352,7 @@ strarr* split(char* str, Dict *d)
             double_string = !double_string;
         }
        
-        if (((str[i] == ' ')||(str[i] == ';')||(str[i] == '<')||(str[i] == '>')||(str[i] == '|')||((str[i] == '&')&&(conveyor)))
+        if (((str[i] == ' ')||(str[i] == ';')||(str[i] == '<')||(str[i] == '>')||(str[i] == '|')||(str[i] == '&'))
                 &&(!(single_string || double_string))
                 &&(!do_nothing))
         {
@@ -372,15 +374,10 @@ strarr* split(char* str, Dict *d)
             }
             
             if (str[i] == '&')
-            {
                 strarr_push(res,"&");
-            }
             
             if (str[i] == '|')
-            {
                 strarr_push(res,"|");
-                conveyor = 1;
-            }
 
             if (str[i] == ';')
                 strarr_push(res,";");
@@ -443,29 +440,6 @@ struct program
 
 typedef struct program Program;
 
-int execute(strarr *args,int start,int end)
-{
-    strarr* tmp;
-    
-    int pid = 0,
-        status = 0;
-
-    tmp = strarr_slice(args,start,end);
-    strarr_push(tmp,NULL);
-    
-    if((pid = fork()) == 0)
-    {
-        execvp(tmp->argv[0],tmp->argv);
-        strarr_clear(tmp);
-        return ERROR;
-    }else{
-        wait(&status);
-    }
-    
-    strarr_clear(tmp);
-    return SUCCESS;
-}
-
 int analyze(strarr* args)
 {
     Program *prog = (Program*)malloc(sizeof(Program));
@@ -474,17 +448,18 @@ int analyze(strarr* args)
         i = 0,
         delimeter = 0,
         conveyor = 0,
-        last_conveyor = 0,
-        end_of_args = 0;
+        met_conveyor = 0,
+        end_of_args = 0,
+        last_arg = 0,
+        ampersand = 0;
+    
+    if (prog == NULL)
+        THROW(MEMORY_ERR)
 
     prog->args = NULL;
-    
-    if (args == NULL)
-    {
-        free(prog);
-        return EXIT;
-    }
-    
+    prog->input_file = NULL;
+    prog->output_file = NULL;
+
     if ((args->argc > 0)&&(!strcmp(args->argv[0],"exit")))
     {
         free(prog);
@@ -492,57 +467,104 @@ int analyze(strarr* args)
     }
     
     while(end < args->argc)
-    {
-        if ((!strcmp(args->argv[end],"&"))&&(!last_conveyor))
-        {
-            free(prog);
-            return ERROR;
-        }
-
+    {  
+        if (end == args->argc - 1)
+            last_arg = 1;
+        
         if (!strcmp(args->argv[end],";"))
             delimeter = 1;
 
         if (!strcmp(args->argv[end],"|"))
             conveyor = 1;
-
-        if (end == args->argc - 1)
-            end_of_args = 1;
         
-        if(delimeter||conveyor||end_of_args)
+        if (!strcmp(args->argv[end],"&"))
+            ampersand = 1;
+
+        if (!strcmp(args->argv[end],">>"))
+        {
+            if (last_arg)
             {
-                if ((end_of_args)&&(!delimeter)&&(!conveyor))
-                    end++;
-                
-                if(start<end)
-                {
-                    prog->args = strarr_slice(args,start,end);
-                    if ((conveyor||last_conveyor)&&((prog->args->argc == 0)||(end_of_args)))
-                    {
-                        strarr_clear(prog->args);
-                        free(prog);
-                        return ERROR;
-                    }
-                
-                    printf("name = %s\n",prog->args->argv[0]);
-                    for(i = 0;i < prog->args->argc;i++)
-                        printf("arg[%i] = %s\n",i,prog->args->argv[i]);
-                    
-                    strarr_clear(prog->args);
-                }
-                /*
-                if (execute(args,start,end) != SUCCESS)
-                   return ERROR;   
-                */
-                last_conveyor = conveyor;
-                delimeter = 0;
-                end_of_args = 0;
-                conveyor = 0;
-                start = end+1;
+                free(prog);
+                return ERROR;
             }
+
+            free(strarr_pop(args,end));
+            prog->output_file = strarr_pop(args,end); 
+            prog->output_type = APPEND;
+            
+            if (end == args->argc)
+                end_of_args = 1;
+        }
+        
+        if ((!end_of_args)&&(!strcmp(args->argv[end],">")))
+        {
+            if (last_arg)
+            {
+                free(prog);
+                return ERROR;
+            }
+            free(strarr_pop(args,end));
+            prog->output_file = strarr_pop(args,end); 
+            prog->output_type = REWRITE;
+            
+            if (end == args->argc)
+                end_of_args = 1;
+        }
+        
+        if ((!end_of_args)&&(!strcmp(args->argv[end],"<")))
+        {
+            if (last_arg)
+            {
+                free(prog);
+                return ERROR;
+            }
+            free(strarr_pop(args,end));
+            prog->input_file = strarr_pop(args,end); 
+            
+            if (end == args->argc)
+                end_of_args = 1;
+        }
+
+        if(delimeter||conveyor||ampersand||last_arg||end_of_args)
+        {
+            if ((last_arg)&&(!delimeter)&&(!conveyor)&&(!ampersand))
+                end++;
+
+            if ((((start == end)||(last_arg))&&(conveyor))||((ampersand)&&(!met_conveyor)))
+            {
+                free(prog);
+                return ERROR;
+            }
+
+            prog->args = strarr_slice(args,start,end);
+            
+            if (prog->args->argc>0)
+            {
+                printf("name = %s\n",prog->args->argv[0]);
+                printf("output_file = %s with type = %i\n",prog->output_file,prog->output_type);
+                printf("input_file = %s\n",prog->input_file);
+            }
+
+            for(i=0;i < prog->args->argc; i++)
+                printf("arg[%i] = %s\n",i,prog->args->argv[i]);
+
+            strarr_clear(prog->args);
+            
+            if (conveyor)
+                met_conveyor = 1;
+            else
+                met_conveyor = 0;
+
+            delimeter = 0;
+            conveyor = 0;
+            
+            start = end+1;
+        }
 
         end++;
     }
     
+        
     free(prog);
     return SUCCESS;
 }
@@ -554,8 +576,7 @@ int analyze(strarr* args)
 int main()
 {
     strarr *args;
-    int status,
-        i;
+    int status;
     Profile* user;
     char *str = NULL;
     
@@ -571,21 +592,13 @@ int main()
             
             args = split(str,user->dictionary);
             
-            for(i=0;i<args->argc;i++)
-                printf("arg[%i] = %s\n",i,args->argv[i]);
-            
-            
+            status = analyze(args);
+
             strarr_clear(args);
             
             free(str);
-
-            if (feof(stdin))
-                break;  
             
-            /*
-            status = analyze(args);  
-            
-            if (status == EXIT)
+            if ((status == EXIT)||(feof(stdin)))
             {
                 printf("Bye Bye!\n");
                 break;
@@ -593,9 +606,9 @@ int main()
 
             if (status == ERROR)
             {
-                printf("Shit happends\n\tForrest Gump\n");
+                printf("Error\n");
             }
-            */
+            
         }
     }
     CATCH(MEMORY_ERR)
@@ -612,6 +625,5 @@ int main()
     }
     ENDTRY
     free_data(user);
-     
     return 0;
 }

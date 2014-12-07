@@ -45,6 +45,22 @@ strarr* strarr_slice(strarr *tmp,int start,int end)
     return result;
 }
 
+char* strarr_pop(strarr *tmp,int pos)
+{
+    int i;
+    char *buf = (char*)malloc((strlen(tmp->argv[pos])+1)*sizeof(char));
+    strcpy(buf,tmp->argv[pos]);
+    free(tmp->argv[pos]);
+    tmp->argv[pos] = NULL;
+    for (i = pos;i < tmp->argc-1;i++)
+    {
+        tmp->argv[i] = tmp->argv[i+1];
+    }
+    tmp->argc -= 1;
+    tmp->argv = (char**)realloc(tmp->argv,(tmp->argc)*sizeof(char*));
+    return buf;
+}
+
 void strarr_clear(strarr* tmp)
 {
     int i;

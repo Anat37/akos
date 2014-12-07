@@ -8,8 +8,10 @@ typedef struct strarr strarr;
 
 strarr* strarr_init();
 
-void strarr_push(strarr *tmp,char* str);
+void strarr_push(strarr*,char* );
 
-strarr* strarr_slice(strarr *tmp,int start,int end);
+strarr* strarr_slice(strarr*,int,int);
 
-void strarr_clear(strarr* tmp);
+char* strarr_pop(strarr*,int);
+
+void strarr_clear(strarr*);
