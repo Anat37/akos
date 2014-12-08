@@ -14,7 +14,7 @@ int pd[2];
 
 struct sigaction action;
 
-#define strsize 256
+#define STR_DEFAULT_SIZE 256
 #define lessthan 11
 
 void reverse(char *str)
@@ -40,7 +40,7 @@ void itoa(int n, char *str)
         i = 1;
     }
 
-    while((n) && (i < strsize))
+    while((n) && (i < STR_DEFAULT_SIZE))
     {
         str[i] = '0' + n%10;
         n /= 10;
@@ -55,8 +55,8 @@ void get_msg(int s)
 {
     sleep(1);
     int msg;
-    char buf[strsize];
-    char num[strsize];
+    char buf[STR_DEFAULT_SIZE];
+    char num[STR_DEFAULT_SIZE];
 
     read(pd[0],&msg,sizeof(int));
     
@@ -82,7 +82,7 @@ void get_msg(int s)
 
 void shut_down(int c)
 {
-    char buf[strsize];
+    char buf[STR_DEFAULT_SIZE];
     itoa(getpid(),buf);
     strcat(buf," is done\n");
     write(1,buf,strlen(buf));

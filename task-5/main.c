@@ -11,7 +11,7 @@ int main()
     int data,pos;
     while(1)
     {
-        printf("command > ");
+        printf("command >>> ");
         scanf("%s",command);
         
         if(!strcmp(command,"exit"))
@@ -21,7 +21,7 @@ int main()
         
         if(!strcmp(command,"push"))
         {
-            printf(" data > ");
+            printf(" data >>> ");
             scanf("%i",&data);
             lpush(&l,data);
         }
@@ -39,25 +39,25 @@ int main()
 
         if(!strcmp(command,"insert"))
         {
-            printf(" data > ");
+            printf(" data >>> ");
             scanf("%i",&data);
-            printf(" position > ");
+            printf(" position >>> ");
             scanf("%i",&pos);
             linsert(&l, pos, data);
         }
         
         if(!strcmp(command,"delete"))
         {
-            printf(" position > ");
+            printf(" position >>> ");
             scanf("%i",&pos);
             ldelete(&l, pos);
         }
         
         if(!strcmp(command,"search"))
         {
-            printf(" data > ");
+            printf(" data >>> ");
             scanf("%i",&data);
-            printf("%i",lsearch(l,data));
+            printf("%i\n",lsearch(l,data));
         }
     }
     lclear(&l);

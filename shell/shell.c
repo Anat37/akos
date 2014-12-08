@@ -26,24 +26,25 @@
 
 #include "dictionary.h"
 #include "strarr.h"
+
 /* 
  * описание конструкции try catch
  */
 
 static jmp_buf err;
 
-#define TRY \
-    { \
+#define TRY                 \
+    {                       \
         switch(setjmp(err)) \
-        { \
+        {                   \
             case 0:
 
-#define CATCH(x) \
+#define CATCH(x)       \
                 break; \
             case x:
 
 #define ENDTRY \
-        }\
+        }      \
     }
 
 #define THROW(x) longjmp(err,x);
@@ -53,11 +54,12 @@ static jmp_buf err;
  */
 
 #define MEMORY_ERR 1
-#define FILE_ERR 2
+#define FILE_ERR   2
 #define QUOTES_ERR 3
-#define MEMORY_ERR_TEXT "Some error with memory"
-#define FILE_ERR_TEXT "Some error with file access"
-#define QUOTES_ERR_TEXT "Some error with quotes"
+
+#define MEMORY_ERR_TEXT  "Some error with memory"
+#define FILE_ERR_TEXT    "Some error with file access"
+#define QUOTES_ERR_TEXT  "Some error with quotes"
 
 #define EXIT  2
 #define ERROR 1
@@ -124,7 +126,7 @@ char* read_long_line(FILE* infp)
         if ((tmp =='\n')
                 &&(single_string || double_string || do_nothing))
         {
-            printf(" > ");
+            /* printf(" > "); */
         }
         
         if ((tmp == '#')
@@ -276,6 +278,7 @@ void insert_vars(char **str,Dict *d)
             
             free(tmp);
             free(key);
+            free(value);
             i = pos+1;
             val = 0;
             continue;
@@ -307,10 +310,10 @@ void insert_vars(char **str,Dict *d)
     }
 }
 
-/*
- * получение парметров для запуска программы argc и argv 
+/**
+ * получение парметров для запуска программы argc и argv
+ * 
  */
-
 strarr* split(char* str, Dict *d)
 {
     strarr *res = strarr_init();
@@ -440,6 +443,17 @@ struct program
 
 typedef struct program Program;
 
+void program_clean(Program *prog)
+{
+    
+    strarr_clear(prog->args);
+    if (prog->input_file!=NULL)
+        free(prog->input_file);
+    if (prog->output_file!=NULL)
+        free(prog->output_file);
+    free(prog);
+}
+
 int analyze(strarr* args)
 {
     Program *prog = (Program*)malloc(sizeof(Program));
@@ -462,7 +476,7 @@ int analyze(strarr* args)
 
     if ((args->argc > 0)&&(!strcmp(args->argv[0],"exit")))
     {
-        free(prog);
+        program_clean(prog);
         return EXIT; 
     }
     
@@ -484,7 +498,7 @@ int analyze(strarr* args)
         {
             if (last_arg)
             {
-                free(prog);
+                program_clean(prog);
                 return ERROR;
             }
 
@@ -502,7 +516,7 @@ int analyze(strarr* args)
         {
             if (last_arg)
             {
-                free(prog);
+                program_clean(prog);
                 return ERROR;
             }
             free(strarr_pop(args,end));
@@ -519,9 +533,10 @@ int analyze(strarr* args)
         {
             if (last_arg)
             {
-                free(prog);
+                program_clean(prog);
                 return ERROR;
             }
+            
             free(strarr_pop(args,end));
             prog->input_file = strarr_pop(args,end); 
             
@@ -538,7 +553,7 @@ int analyze(strarr* args)
 
             if ((((start == end)||(last_arg))&&(conveyor))||((ampersand)&&(!met_conveyor)))
             {
-                free(prog);
+                program_clean(prog);
                 return ERROR;
             }
 
@@ -547,14 +562,20 @@ int analyze(strarr* args)
             if (prog->args->argc>0)
             {
                 printf("name = %s\n",prog->args->argv[0]);
-                printf("output_file = %s with type = %i\n",prog->output_file,prog->output_type);
-                printf("input_file = %s\n",prog->input_file);
+                if (prog->output_file != NULL)
+                    printf("output_file = %s with type = %i\n",prog->output_file,prog->output_type);
+                if (prog->input_file != NULL)
+                    printf("input_file = %s\n",prog->input_file);
             }
 
             for(i=0;i < prog->args->argc; i++)
                 printf("arg[%i] = %s\n",i,prog->args->argv[i]);
-
-            strarr_clear(prog->args);
+            
+            program_clean(prog);
+            prog = (Program*)malloc(sizeof(Program));
+            prog->args = NULL;
+            prog->input_file = NULL;
+            prog->output_file = NULL;
             
             if (conveyor)
                 met_conveyor = 1;
@@ -571,7 +592,7 @@ int analyze(strarr* args)
     }
     
         
-    free(prog);
+    program_clean(prog);
     return SUCCESS;
 }
 
@@ -593,15 +614,15 @@ int main()
         str = NULL;
         while(1)
         {
-            printf("%s$ ",user->name);
+            /*printf("%s$ ",user->name);*/
             str = read_long_line(stdin);
             
             args = split(str,user->dictionary);
+           
             
             status = analyze(args);
-
+             
             strarr_clear(args);
-            
             free(str);
             
             if ((status == EXIT)||(feof(stdin)))
