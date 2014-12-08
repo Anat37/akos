@@ -494,6 +494,8 @@ int analyze(strarr* args)
             
             if (end == args->argc)
                 end_of_args = 1;
+            else
+                continue;
         }
         
         if ((!end_of_args)&&(!strcmp(args->argv[end],">")))
@@ -509,6 +511,8 @@ int analyze(strarr* args)
             
             if (end == args->argc)
                 end_of_args = 1;
+            else
+                continue;
         }
         
         if ((!end_of_args)&&(!strcmp(args->argv[end],"<")))
@@ -523,6 +527,8 @@ int analyze(strarr* args)
             
             if (end == args->argc)
                 end_of_args = 1;
+            else
+                continue;
         }
 
         if(delimeter||conveyor||ampersand||last_arg||end_of_args)
