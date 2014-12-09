@@ -126,7 +126,7 @@ char* read_long_line(FILE* infp)
         if ((tmp =='\n')
                 &&(single_string || double_string || do_nothing))
         {
-            /* printf(" > "); */
+            printf(" > ");
         }
         
         if ((tmp == '#')
