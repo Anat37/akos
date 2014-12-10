@@ -1,3 +1,4 @@
+#include <fcntl.h>
 #include <unistd.h>
 #include <sys/wait.h>
 #include <stdio.h>
@@ -509,10 +510,33 @@ strarr* split(char* str, Dict *d)
  * работа с конвеером
  */
 
-void execute(strarr *args,int fd0,int fd1)
+void execute(Program *prog,int fd0,int fd1)
 {
     if (fork() == 0)
     {
+        if (prog->input_file != NULL)
+        {
+            close(fd0);
+            fd0 = open(prog->input_file,O_RDONLY);
+            if (fd0<0)
+                return;
+        }
+
+        if (prog->output_file != NULL)
+        {
+            close(fd1);
+            if (prog->output_type == REWRITE)
+                fd1 = open(prog->output_file, O_CREAT|O_WRONLY|O_TRUNC);
+            else
+                fd1 = open(prog->output_file, O_CREAT|O_WRONLY|O_APPEND);
+            
+            if (fd1<0)
+            {
+                printf("No such file\n");
+                return;
+            }
+        }
+       
         dup2(fd0,0);
         dup2(fd1,1);
         
@@ -521,10 +545,11 @@ void execute(strarr *args,int fd0,int fd1)
         if (fd1 != 1)
             close(fd1);
 
-        strarr_push(args,NULL);
-        execvp(args->argv[0],args->argv);
+        strarr_push(prog->args,NULL);
+        execvp(prog->args->argv[0],prog->args->argv);
         printf("No such command\n");
         exit(1);
+    
     }else
     {
         if (fd0 != 0)
@@ -536,17 +561,18 @@ void execute(strarr *args,int fd0,int fd1)
 }
 
 
-int analyze(strarr* args)
+void run_conveyor(strarr* args)
 {
     Job *j = job_init();
     Program *prog = program_init();
+    
     int start = 0,
         end = 0,
         conveyor = 0,
         end_of_args = 0,
         last_arg = 0,
         i = 0;
-    
+
     int **pipes;
     
     if (prog == NULL)
@@ -569,7 +595,7 @@ int analyze(strarr* args)
             {
                 job_clean(j);
                 program_clean(prog);
-                return ERROR;
+                return;
             }
 
             free(strarr_pop(args,end));
@@ -588,7 +614,7 @@ int analyze(strarr* args)
             {
                 job_clean(j);
                 program_clean(prog);
-                return ERROR;
+                return;
             }
             free(strarr_pop(args,end));
             prog->output_file = strarr_pop(args,end); 
@@ -606,7 +632,7 @@ int analyze(strarr* args)
             {
                 job_clean(j);
                 program_clean(prog);
-                return ERROR;
+                return;
             }
             
             free(strarr_pop(args,end));
@@ -627,7 +653,7 @@ int analyze(strarr* args)
             {
                 job_clean(j);
                 program_clean(prog);
-                return ERROR;
+                return;
             }
 
             prog->args = strarr_slice(args,start,end);
@@ -653,15 +679,34 @@ int analyze(strarr* args)
         {
             pipes[i+1] = (int*)malloc(sizeof(int)*2);
             pipe(pipes[i+1]);
-            execute(j->program[i]->args,pipes[i][0],pipes[i+1][1]);
+            execute(j->program[i],pipes[i][0],pipes[i+1][1]);
         }
 
-        execute(j->program[i]->args,pipes[i][0],1);
+        execute(j->program[i],pipes[i][0],1);
         close(pipes[i][1]);
     }
 
     job_clean(j);
-    return SUCCESS;
+    return;
+}
+
+void run(strarr *args)
+{
+    int start = 0,
+        end = 0;
+
+    while (end < args->argc)
+    {
+        if (!strcmp(args->argv[end],";"))
+        {
+            run_conveyor(strarr_slice(args,start,end));
+            end++;
+            start = end;
+        }
+        end++;
+    }
+    if (start!=end)
+        run_conveyor(strarr_slice(args,start,end));
 }
 
 /*
@@ -670,7 +715,6 @@ int analyze(strarr* args)
 
 int main()
 {
-    int status;
     strarr *args;
     Profile* user;
     char *str = NULL;
@@ -687,22 +731,16 @@ int main()
             
             args = split(str,user->dictionary);
             
-            status = analyze(args);
-             
+            run(args);
+
             strarr_clear(args);
             free(str);
             
-            if ((status == EXIT)||(feof(stdin)))
+            if (feof(stdin))
             {
                 printf("Bye Bye!\n");
                 break;
             }
-
-            if (status == ERROR)
-            {
-                printf("Error\n");
-            }
-            
         }
     }
     CATCH(MEMORY_ERR)
