@@ -1,28 +1,9 @@
-#ifndef UNISTD
-    #include <unistd.h>
-    #include <sys/wait.h>
-    #define UNISTD
-#endif
-
-#ifndef STDIO
-    #include <stdio.h>
-    #define STDIO
-#endif
-
-#ifndef SETJMP
-    #include <setjmp.h>
-    #define SETJMP
-#endif
-
-#ifndef STRING
-    #include <string.h>
-    #define STRING
-#endif
-
-#ifndef STDLIB
-    #include <stdlib.h>
-    #define STDLIB
-#endif
+#include <unistd.h>
+#include <sys/wait.h>
+#include <stdio.h>
+#include <setjmp.h>
+#include <string.h>
+#include <stdlib.h>
 
 #include "dictionary.h"
 #include "strarr.h"
@@ -61,12 +42,134 @@ static jmp_buf err;
 #define FILE_ERR_TEXT    "Some error with file access"
 #define QUOTES_ERR_TEXT  "Some error with quotes"
 
-#define EXIT  2
-#define ERROR 1
+#define EXIT    2
+#define ERROR   1
 #define SUCCESS 0
 
-#define APPEND 1
+#define APPEND  1
 #define REWRITE 2
+
+
+/*
+ * пользовательские данные
+ */
+
+struct profile
+{
+    char* name;
+    Dict* dictionary;
+};
+
+typedef struct profile Profile;
+
+Profile* collect_data()
+{
+    Profile* user = (Profile*)malloc(sizeof(Profile));
+    user->name = (char*)malloc(sizeof(char)*256);
+    strcpy(user->name,getenv("USER"));
+    user->dictionary = dict_init();
+    dict_append(user->dictionary,"$USER",user->name);
+    return user;
+}
+
+void free_data(Profile *user)
+{
+    dict_clear(&user->dictionary);
+    free(user->name);
+    free(user);
+}
+
+/*
+ * структура программы и работа со структурой
+ */
+
+struct program
+{
+    char *name;
+    strarr *args;
+    char *input_file,*output_file;
+    int output_type;
+};
+
+typedef struct program Program;
+
+Program * program_init()
+{
+    Program *prog = (Program*)malloc(sizeof(Program));
+    prog->name = NULL;
+    prog->args = NULL;
+    prog->input_file = NULL;
+    prog->output_file = NULL;
+    return prog;
+}
+
+void program_clean(Program *prog)
+{
+    
+    strarr_clear(prog->args);
+    if (prog->input_file!=NULL)
+        free(prog->input_file);
+    if (prog->output_file!=NULL)
+        free(prog->output_file);
+    free(prog);
+}
+
+void program_print(Program *prog)
+{
+    int i;
+
+    if (prog->args->argc>0)
+    {
+        printf("name = %s\n",prog->args->argv[0]);
+        if (prog->output_file != NULL)
+            printf("output_file = %s with type = %i\n",prog->output_file,prog->output_type);
+        if (prog->input_file != NULL)
+            printf("input_file = %s\n",prog->input_file);
+    }
+
+    for(i=0;i < prog->args->argc; i++)
+        printf("arg[%i] = %s\n",i,prog->args->argv[i]);
+}
+
+struct job
+{
+    Program **program;
+    int number_of_programs;
+};
+
+typedef struct job Job;
+
+Job *job_init()
+{
+    Job *j = (Job*)malloc(sizeof(Job));
+    j->program = NULL;
+    j->number_of_programs = 0;
+    return j;
+}
+
+void job_clean(Job *j)
+{
+    int i;
+    
+    for (i = 0;i < j->number_of_programs; i++)
+        program_clean(j->program[i]);
+    free(j);
+}
+
+void job_push(Job *j,Program *prog)
+{
+    j->number_of_programs += 1;
+    j->program = (Program**)realloc(j->program,sizeof(Program*)*(j->number_of_programs));
+    j->program[j->number_of_programs-1] = prog;
+    return;
+}
+
+void job_print(Job *j)
+{
+    int i;
+    for (i = 0;i<j->number_of_programs;i++)
+        program_print(j->program[i]);
+}
 
 /*
  * считывает команду произвольного размера
@@ -161,35 +264,6 @@ char* read_long_line(FILE* infp)
         THROW(MEMORY_ERR)
     }
     return str;
-}
-
-/*
- * пользовательские данные
- */
-
-struct profile
-{
-    char* name;
-    Dict* dictionary;
-};
-
-typedef struct profile Profile;
-
-Profile* collect_data()
-{
-    Profile* user = (Profile*)malloc(sizeof(Profile));
-    user->name = (char*)malloc(sizeof(char)*256);
-    strcpy(user->name,getenv("USER"));
-    user->dictionary = dict_init();
-    dict_append(user->dictionary,"$USER",user->name);
-    return user;
-}
-
-void free_data(Profile *user)
-{
-    dict_clear(&user->dictionary);
-    free(user->name);
-    free(user);
 }
 
 /*
@@ -310,10 +384,11 @@ void insert_vars(char **str,Dict *d)
     }
 }
 
-/**
+/*
  * получение парметров для запуска программы argc и argv
  * 
  */
+
 strarr* split(char* str, Dict *d)
 {
     strarr *res = strarr_init();
@@ -430,74 +505,69 @@ strarr* split(char* str, Dict *d)
 }
 
 /*
- * выполнение команды
+ * разбиение аргументов на подпрограммы
+ * работа с конвеером
  */
 
-struct program
+void execute(strarr *args,int fd0,int fd1)
 {
-    char *name;
-    strarr *args;
-    char *input_file,*output_file;
-    int output_type;
-};
+    if (fork() == 0)
+    {
+        dup2(fd0,0);
+        dup2(fd1,1);
+        
+        if (fd0 != 0)
+            close(fd0);
+        if (fd1 != 1)
+            close(fd1);
 
-typedef struct program Program;
-
-void program_clean(Program *prog)
-{
-    
-    strarr_clear(prog->args);
-    if (prog->input_file!=NULL)
-        free(prog->input_file);
-    if (prog->output_file!=NULL)
-        free(prog->output_file);
-    free(prog);
+        strarr_push(args,NULL);
+        execvp(args->argv[0],args->argv);
+        printf("No such command\n");
+        exit(1);
+    }else
+    {
+        if (fd0 != 0)
+            close(fd0);
+        if (fd1 != 1)
+            close(fd1);
+        wait(NULL);
+    }
 }
+
 
 int analyze(strarr* args)
 {
-    Program *prog = (Program*)malloc(sizeof(Program));
+    Job *j = job_init();
+    Program *prog = program_init();
     int start = 0,
         end = 0,
-        i = 0,
-        delimeter = 0,
         conveyor = 0,
-        met_conveyor = 0,
         end_of_args = 0,
         last_arg = 0,
-        ampersand = 0;
+        i = 0;
+    
+    int **pipes;
     
     if (prog == NULL)
         THROW(MEMORY_ERR)
-
-    prog->args = NULL;
-    prog->input_file = NULL;
-    prog->output_file = NULL;
-
-    if ((args->argc > 0)&&(!strcmp(args->argv[0],"exit")))
-    {
-        program_clean(prog);
-        return EXIT; 
-    }
     
+    if (args == NULL)
+        THROW(MEMORY_ERR)
+
     while(end < args->argc)
     {  
         if (end == args->argc - 1)
             last_arg = 1;
         
-        if (!strcmp(args->argv[end],";"))
-            delimeter = 1;
-
         if (!strcmp(args->argv[end],"|"))
             conveyor = 1;
         
-        if (!strcmp(args->argv[end],"&"))
-            ampersand = 1;
-
         if (!strcmp(args->argv[end],">>"))
         {
             if (last_arg)
             {
+                job_clean(j);
                 program_clean(prog);
                 return ERROR;
             }
@@ -516,6 +586,7 @@ int analyze(strarr* args)
         {
             if (last_arg)
             {
+                job_clean(j);
                 program_clean(prog);
                 return ERROR;
             }
@@ -533,6 +604,7 @@ int analyze(strarr* args)
         {
             if (last_arg)
             {
+                job_clean(j);
                 program_clean(prog);
                 return ERROR;
             }
@@ -546,64 +618,60 @@ int analyze(strarr* args)
                 continue;
         }
 
-        if(delimeter||conveyor||ampersand||last_arg||end_of_args)
+        if(conveyor||last_arg||end_of_args)
         {
-            if ((last_arg)&&(!delimeter)&&(!conveyor)&&(!ampersand))
+            if ((last_arg)&&(!conveyor))
                 end++;
 
-            if ((((start == end)||(last_arg))&&(conveyor))||((ampersand)&&(!met_conveyor)))
+            if (((start == end)||(last_arg))&&(conveyor))
             {
+                job_clean(j);
                 program_clean(prog);
                 return ERROR;
             }
 
             prog->args = strarr_slice(args,start,end);
+            job_push(j,prog);
+            prog = program_init();
             
-            if (prog->args->argc>0)
-            {
-                printf("name = %s\n",prog->args->argv[0]);
-                if (prog->output_file != NULL)
-                    printf("output_file = %s with type = %i\n",prog->output_file,prog->output_type);
-                if (prog->input_file != NULL)
-                    printf("input_file = %s\n",prog->input_file);
-            }
-
-            for(i=0;i < prog->args->argc; i++)
-                printf("arg[%i] = %s\n",i,prog->args->argv[i]);
-            
-            program_clean(prog);
-            prog = (Program*)malloc(sizeof(Program));
-            prog->args = NULL;
-            prog->input_file = NULL;
-            prog->output_file = NULL;
-            
-            if (conveyor)
-                met_conveyor = 1;
-            else
-                met_conveyor = 0;
-
-            delimeter = 0;
             conveyor = 0;
-            
             start = end+1;
         }
 
         end++;
     }
+    program_clean(prog); 
     
-        
-    program_clean(prog);
+    if (j->number_of_programs > 0)
+    {
+        pipes = (int**)malloc(sizeof(int*)*(j->number_of_programs));
+        pipes[0] = (int*)malloc(sizeof(int)*2);
+        pipe(pipes[0]);
+        pipes[0][0] = 0;
+
+        for (i = 0;i < j->number_of_programs-1;i++)
+        {
+            pipes[i+1] = (int*)malloc(sizeof(int)*2);
+            pipe(pipes[i+1]);
+            execute(j->program[i]->args,pipes[i][0],pipes[i+1][1]);
+        }
+
+        execute(j->program[i]->args,pipes[i][0],1);
+        close(pipes[i][1]);
+    }
+
+    job_clean(j);
     return SUCCESS;
 }
 
 /*
- * все функции работают сдесь 
+ * все функции работают здесь 
  */
 
 int main()
 {
-    strarr *args;
     int status;
+    strarr *args;
     Profile* user;
     char *str = NULL;
     
@@ -614,11 +682,10 @@ int main()
         str = NULL;
         while(1)
         {
-            /*printf("%s$ ",user->name);*/
+            printf("%s$ ",user->name);
             str = read_long_line(stdin);
             
             args = split(str,user->dictionary);
-           
             
             status = analyze(args);
              
@@ -652,5 +719,7 @@ int main()
     }
     ENDTRY
     free_data(user);
+
     return 0;
+
 }
