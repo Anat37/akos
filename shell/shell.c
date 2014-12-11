@@ -526,9 +526,9 @@ void execute(Program *prog,int fd0,int fd1)
         {
             close(fd1);
             if (prog->output_type == REWRITE)
-                fd1 = open(prog->output_file, O_CREAT|O_WRONLY|O_TRUNC);
+                fd1 = open(prog->output_file, O_CREAT|O_WRONLY|O_TRUNC,0666);
             else
-                fd1 = open(prog->output_file, O_CREAT|O_WRONLY|O_APPEND);
+                fd1 = open(prog->output_file, O_CREAT|O_WRONLY|O_APPEND,0666);
             
             if (fd1<0)
             {
