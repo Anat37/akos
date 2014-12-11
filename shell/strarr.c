@@ -1,12 +1,5 @@
-#ifndef STDLIB
-    #include <stdlib.h>
-    #define STDLIB
-#endif
-
-#ifndef STRING
-    #include <string.h>
-    #define STRING
-#endif
+#include <stdlib.h>
+#include <string.h>
 
 struct strarr
 {
@@ -14,17 +7,17 @@ struct strarr
     int argc;
 };
 
-typedef struct strarr strarr;
+typedef struct strarr Strarr;
 
-strarr* strarr_init()
+Strarr* strarr_init()
 {
-    strarr* tmp = (strarr*)malloc(sizeof(strarr));
+    Strarr* tmp = (Strarr*)malloc(sizeof(Strarr));
     tmp -> argv = NULL;
     tmp -> argc = 0;
     return tmp;
 }
 
-void strarr_push(strarr *tmp,char* str)
+void strarr_push(Strarr *tmp,char* str)
 {
     tmp->argv = (char**)realloc(tmp->argv,sizeof(char*)*(tmp->argc + 1));
     if (str==NULL)
@@ -36,16 +29,16 @@ void strarr_push(strarr *tmp,char* str)
     tmp->argc += 1;
 }
 
-strarr* strarr_slice(strarr *tmp,int start,int end)
+Strarr* strarr_slice(Strarr *tmp,int start,int end)
 {
-    strarr* result = strarr_init();
+    Strarr* result = strarr_init();
     int i;
     for(i = start;i<end;i++)
         strarr_push(result,tmp->argv[i]);
     return result;
 }
 
-char* strarr_pop(strarr *tmp,int pos)
+char* strarr_pop(Strarr *tmp,int pos)
 {
     int i;
     char *buf = (char*)malloc((strlen(tmp->argv[pos])+1)*sizeof(char));
@@ -61,7 +54,7 @@ char* strarr_pop(strarr *tmp,int pos)
     return buf;
 }
 
-void strarr_clear(strarr* tmp)
+void strarr_clear(Strarr* tmp)
 {
     int i;
     if (tmp==NULL)

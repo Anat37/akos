@@ -1,9 +1,12 @@
+#ifndef _DICTIONARY_H
+#define _DICTIONARY_H
+
 struct Dictionary
 {
-  char **key;
-  char **value;
-  size_t pos;
-  size_t max_len;
+    char **key;
+    char **value;
+    size_t pos;
+    size_t max_len;
 };
 
 typedef struct Dictionary Dict;
@@ -15,3 +18,5 @@ void dict_append(Dict *,char*,char*);
 char* dict_get(Dict *,char*);
 
 void dict_clear(Dict **);
+
+#endif

@@ -1,17 +1,10 @@
-#ifndef STDLIB
-    #include <stdlib.h>
-    #define STDLIB
-#endif
+/*
+ * Словарь с линейным поиском
+ */
 
-#ifndef STDIO
-    #include <stdio.h>
-    #define STDIO
-#endif
-
-#ifndef STRING
-    #include <string.h>
-    #define STRING
-#endif
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
 struct Dictionary
 {
@@ -77,6 +70,3 @@ void dict_clear(Dict** d)
     free((*d));
     *d = NULL;
 }
-
-
-

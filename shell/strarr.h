@@ -1,17 +1,22 @@
+#ifndef _STRARR_H
+#define _STRARR_H
+
 struct strarr
 {
     char **argv;
     int argc;
 };
 
-typedef struct strarr strarr;
+typedef struct strarr Strarr;
 
-strarr* strarr_init();
+Strarr* strarr_init();
 
-void strarr_push(strarr*,char* );
+void strarr_push(Strarr*,char* );
 
-strarr* strarr_slice(strarr*,int,int);
+Strarr* strarr_slice(Strarr*,int,int);
 
-char* strarr_pop(strarr*,int);
+char* strarr_pop(Strarr*,int);
 
-void strarr_clear(strarr*);
+void strarr_clear(Strarr*);
+
+#endif

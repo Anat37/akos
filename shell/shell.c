@@ -6,8 +6,11 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "dictionary.h"
 #include "strarr.h"
+#include "dictionary.h"
+#include "program.h"
+#include "job.h"
+#include "profile.h"
 
 /* 
  * описание конструкции try catch
@@ -49,128 +52,6 @@ static jmp_buf err;
 
 #define APPEND  1
 #define REWRITE 2
-
-
-/*
- * пользовательские данные
- */
-
-struct profile
-{
-    char* name;
-    Dict* dictionary;
-};
-
-typedef struct profile Profile;
-
-Profile* collect_data()
-{
-    Profile* user = (Profile*)malloc(sizeof(Profile));
-    user->name = (char*)malloc(sizeof(char)*256);
-    strcpy(user->name,getenv("USER"));
-    user->dictionary = dict_init();
-    dict_append(user->dictionary,"$USER",user->name);
-    return user;
-}
-
-void free_data(Profile *user)
-{
-    dict_clear(&user->dictionary);
-    free(user->name);
-    free(user);
-}
-
-/*
- * структура программы и работа со структурой
- */
-
-struct program
-{
-    char *name;
-    strarr *args;
-    char *input_file,*output_file;
-    int output_type;
-};
-
-typedef struct program Program;
-
-Program * program_init()
-{
-    Program *prog = (Program*)malloc(sizeof(Program));
-    prog->name = NULL;
-    prog->args = NULL;
-    prog->input_file = NULL;
-    prog->output_file = NULL;
-    return prog;
-}
-
-void program_clean(Program *prog)
-{
-    
-    strarr_clear(prog->args);
-    if (prog->input_file!=NULL)
-        free(prog->input_file);
-    if (prog->output_file!=NULL)
-        free(prog->output_file);
-    free(prog);
-}
-
-void program_print(Program *prog)
-{
-    int i;
-
-    if (prog->args->argc>0)
-    {
-        printf("name = %s\n",prog->args->argv[0]);
-        if (prog->output_file != NULL)
-            printf("output_file = %s with type = %i\n",prog->output_file,prog->output_type);
-        if (prog->input_file != NULL)
-            printf("input_file = %s\n",prog->input_file);
-    }
-
-    for(i=0;i < prog->args->argc; i++)
-        printf("arg[%i] = %s\n",i,prog->args->argv[i]);
-}
-
-struct job
-{
-    Program **program;
-    int number_of_programs;
-};
-
-typedef struct job Job;
-
-Job *job_init()
-{
-    Job *j = (Job*)malloc(sizeof(Job));
-    j->program = NULL;
-    j->number_of_programs = 0;
-    return j;
-}
-
-void job_clean(Job *j)
-{
-    int i;
-    
-    for (i = 0;i < j->number_of_programs; i++)
-        program_clean(j->program[i]);
-    free(j);
-}
-
-void job_push(Job *j,Program *prog)
-{
-    j->number_of_programs += 1;
-    j->program = (Program**)realloc(j->program,sizeof(Program*)*(j->number_of_programs));
-    j->program[j->number_of_programs-1] = prog;
-    return;
-}
-
-void job_print(Job *j)
-{
-    int i;
-    for (i = 0;i<j->number_of_programs;i++)
-        program_print(j->program[i]);
-}
 
 /*
  * считывает команду произвольного размера
@@ -334,8 +215,8 @@ void insert_vars(char **str,Dict *d)
             
             value = (char*)malloc(sizeof(char)*(strlen(key)+1));
             strcpy(value,key);
-            /*value = dict_get(d,key);*/
-            /*printf("%s %s\n",key,getenv(key));*/
+            /*value = getenv(key);
+            printf("%s %s\n",key,getenv(key));*/
             
             *str = (char*)realloc(*str,sizeof(char)*(strlen(*str) + strlen(value) - strlen(key)+1));
             if (*str == NULL)
@@ -390,9 +271,9 @@ void insert_vars(char **str,Dict *d)
  * 
  */
 
-strarr* split(char* str, Dict *d)
+Strarr* split(char* str, Dict *d)
 {
-    strarr *res = strarr_init();
+    Strarr *res = strarr_init();
     int i,
         size = 0,
         max_size = 1;
@@ -561,7 +442,7 @@ void execute(Program *prog,int fd0,int fd1)
 }
 
 
-void run_conveyor(strarr* args)
+void run_conveyor(Strarr* args)
 {
     Job *j = job_init();
     Program *prog = program_init();
@@ -690,7 +571,7 @@ void run_conveyor(strarr* args)
     return;
 }
 
-void run(strarr *args)
+void run(Strarr *args)
 {
     int start = 0,
         end = 0;
@@ -715,13 +596,13 @@ void run(strarr *args)
 
 int main()
 {
-    strarr *args;
+    Strarr *args;
     Profile* user;
     char *str = NULL;
     
     TRY
     {
-        user = collect_data();
+        user = profile_init();
         
         str = NULL;
         while(1)
@@ -756,7 +637,7 @@ int main()
         perror(QUOTES_ERR_TEXT);
     }
     ENDTRY
-    free_data(user);
+    profile_clean(user);
 
     return 0;
 

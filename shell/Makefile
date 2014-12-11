@@ -3,16 +3,12 @@ CFLAGS= -Wall -ansi -pedantic
 
 all: shell
 
-libdict.a: dictionary.o
-	ar rc libdict.a dictionary.o
-	ranlib libdict.a
+libdata.a: *.o
+	ar -cr libdata.a *.o
+	ranlib libdata.a
 
-libstrarr.a: strarr.o
-	ar rc libstrarr.a strarr.o
-	ranlib libstrarr.a
-
-shell: libdict.a libstrarr.a
-	$(CC) $(CFLAGS) -o shell shell.c libdict.a libstrarr.a
+shell: libdata.a
+	$(CC) $(CFLAGS) -o shell shell.c libdata.a
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $^
