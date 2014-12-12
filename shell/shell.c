@@ -53,6 +53,8 @@ static jmp_buf err;
 #define APPEND  1
 #define REWRITE 2
 
+Profile *user;
+
 /*
  * считывает команду произвольного размера
  */ 
@@ -213,10 +215,7 @@ void insert_vars(char **str,Dict *d)
                 key[j-pos] = (*str)[j];
             key[j-pos] = '\0';
             
-            value = (char*)malloc(sizeof(char)*(strlen(key)+1));
-            strcpy(value,key);
-            /*value = getenv(key);
-            printf("%s %s\n",key,getenv(key));*/
+            value = dict_get(user->dictionary,key);
             
             *str = (char*)realloc(*str,sizeof(char)*(strlen(*str) + strlen(value) - strlen(key)+1));
             if (*str == NULL)
@@ -235,6 +234,7 @@ void insert_vars(char **str,Dict *d)
             free(tmp);
             free(key);
             free(value);
+
             i = pos+1;
             val = 0;
             continue;
@@ -597,7 +597,6 @@ void run(Strarr *args)
 int main()
 {
     Strarr *args;
-    Profile* user;
     char *str = NULL;
     
     TRY

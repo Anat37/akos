@@ -49,12 +49,23 @@ void dict_append(Dict *d,char* key,char*value)
 char* dict_get(Dict *d,char* key)
 {
     size_t i;
+    char *ans = NULL;
     for(i = 0; i<d->pos; i++)
     {
         if ( !strcmp( (d->key)[i], key ) )
-            return (d->value)[i];
+        {
+            ans = (char*)malloc(sizeof(char)*(strlen((d->value)[i])+1));
+            strcpy(ans,(d->value)[i]);
+        }
     }
-    return "";
+    
+    if (ans == NULL)
+    {
+        ans = (char*)malloc(sizeof(char)*1);
+        ans[0] = '\0';
+    }
+
+    return ans;
 }
 
 void dict_clear(Dict** d)
