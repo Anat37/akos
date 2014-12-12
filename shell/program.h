@@ -1,7 +1,7 @@
 #ifndef _PROGRAM_H
 #define _PROGRAM_H	
 
-#include "Strarr.h"
+#include "strarr.h"
 
 struct program
 {

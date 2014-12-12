@@ -393,7 +393,7 @@ Strarr* split(char* str, Dict *d)
 
 void execute(Program *prog,int fd0,int fd1)
 {
-    if (fork() == 0)
+    if (0&&(fork() == 0))
     {
         if (prog->input_file != NULL)
         {
@@ -437,10 +437,9 @@ void execute(Program *prog,int fd0,int fd1)
             close(fd0);
         if (fd1 != 1)
             close(fd1);
-        wait(NULL);
+        /*wait(NULL);*/
     }
 }
-
 
 void run_conveyor(Strarr* args)
 {
@@ -536,22 +535,22 @@ void run_conveyor(Strarr* args)
                 program_clean(prog);
                 return;
             }
-
+            
             prog->args = strarr_slice(args,start,end);
             job_push(j,prog);
             prog = program_init();
-            
+
             conveyor = 0;
             start = end+1;
         }
-
         end++;
     }
     program_clean(prog); 
     
+    pipes = (int**)malloc(sizeof(int*)*(j->number_of_programs));
+    
     if (j->number_of_programs > 0)
     {
-        pipes = (int**)malloc(sizeof(int*)*(j->number_of_programs));
         pipes[0] = (int*)malloc(sizeof(int)*2);
         pipe(pipes[0]);
         pipes[0][0] = 0;
@@ -566,6 +565,10 @@ void run_conveyor(Strarr* args)
         execute(j->program[i],pipes[i][0],1);
         close(pipes[i][1]);
     }
+    
+    for (i = 0;i<j->number_of_programs;i++)
+        free(pipes[i]);
+    free(pipes);
 
     job_clean(j);
     return;
@@ -575,19 +578,26 @@ void run(Strarr *args)
 {
     int start = 0,
         end = 0;
+    Strarr *tmp;
 
     while (end < args->argc)
     {
         if (!strcmp(args->argv[end],";"))
-        {
-            run_conveyor(strarr_slice(args,start,end));
+        {   
+            tmp = strarr_slice(args,start,end);
+            run_conveyor(tmp);
+            strarr_clear(tmp);
             end++;
             start = end;
         }
         end++;
     }
     if (start!=end)
-        run_conveyor(strarr_slice(args,start,end));
+    {
+        tmp = strarr_slice(args,start,end);
+        run_conveyor(tmp);
+        strarr_clear(tmp);
+    }
 }
 
 /*

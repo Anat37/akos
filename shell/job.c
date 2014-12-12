@@ -24,9 +24,9 @@ Job *job_init()
 void job_clean(Job *j)
 {
     int i;
-    
     for (i = 0;i < j->number_of_programs; i++)
         program_clean(j->program[i]);
+    free(j->program);
     free(j);
 }
 
