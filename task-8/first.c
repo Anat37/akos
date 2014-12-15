@@ -23,16 +23,14 @@ int main()
     
     key = ftok("/bin/bash",'c');
     shmid = shmget(key,2*sizeof(int),0666|IPC_CREAT);
-    if (shmid==-1)
+    if (shmid== -1)
     {
-        semctl(semid,IPC_RMID,(int)0);
         return 1;
     }
     shmaddr = shmat(shmid,NULL,0);
     semid = semget(key,3,0666|IPC_CREAT);
-    if (semid==-1)
+    if (semid == -1)
     {
-        shmctl(shmid,IPC_RMID,NULL);
         return 1;
     }
     shmaddr[0] = 0;
