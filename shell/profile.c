@@ -8,6 +8,8 @@
 
 struct profile
 {
+    int pids[256];
+    int pidlen;
     char* name;
     Dict* dictionary;
 };
@@ -21,6 +23,9 @@ Profile* profile_init()
     strcpy(user->name,getenv("USER"));
     user->dictionary = dict_init();
     dict_append(user->dictionary,"$USER",user->name);
+    
+    user->pidlen = 0;
+
     return user;
 }
 

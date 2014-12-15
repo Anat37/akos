@@ -5,7 +5,9 @@
 #include <setjmp.h>
 #include <string.h>
 #include <stdlib.h>
-
+#include <unistd.h>
+#include <signal.h>
+#include <sys/types.h>
 #include "strarr.h"
 #include "dictionary.h"
 #include "program.h"
@@ -54,6 +56,17 @@ static jmp_buf err;
 #define REWRITE 2
 
 Profile *user;
+
+/*костыль*/
+
+void handler(int c)
+{
+    int i;
+    for(i=0;i<user->pidlen;i++)
+    {
+        kill((pid_t)(user->pids[i]),SIGINT);
+    }
+}
 
 /*
  * считывает команду произвольного размера
@@ -393,7 +406,8 @@ Strarr* split(char* str, Dict *d)
 
 void execute(Program *prog,int fd0,int fd1)
 {
-    if (0&&(fork() == 0))
+    int pid;
+    if ((pid=fork()) == 0)
     {
         if (prog->input_file != NULL)
         {
@@ -428,16 +442,19 @@ void execute(Program *prog,int fd0,int fd1)
 
         strarr_push(prog->args,NULL);
         execvp(prog->args->argv[0],prog->args->argv);
-        printf("No such command\n");
+        perror("No such command\n");
         exit(1);
     
     }else
     {
+        (user->pids)[user->pidlen] = pid;
+        user->pidlen += 1;
+
         if (fd0 != 0)
             close(fd0);
         if (fd1 != 1)
             close(fd1);
-        /*wait(NULL);*/
+        wait(NULL);
     }
 }
 
@@ -609,6 +626,8 @@ int main()
     Strarr *args;
     char *str = NULL;
     
+    signal(SIGINT,handler);
+
     TRY
     {
         user = profile_init();
