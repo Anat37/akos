@@ -3,16 +3,13 @@
 #include <sys/shm.h>
 #include <sys/sem.h>
 #include <signal.h>
+#include <unistd.h>
 #include <stdio.h>
+
+static char *shmaddr;
 
 void handler(int c)
 {
-    int shmid,
-        key;
-    char *shmaddr;
-    key = ftok("/bin/bash",'c');
-    shmid = shmget(key,2*sizeof(int),0666);
-    shmaddr = shmat(shmid,NULL,0);
     shmaddr[1] = 0;
     return;
 }
@@ -22,14 +19,22 @@ int main()
     key_t key;
     int shmid,
         semid;
-    char *shmaddr;
     struct sembuf op_in, op_out;
     
     key = ftok("/bin/bash",'c');
     shmid = shmget(key,2*sizeof(int),0666|IPC_CREAT);
+    if (shmid==-1)
+    {
+        semctl(semid,IPC_RMID,(int)0);
+        return 1;
+    }
     shmaddr = shmat(shmid,NULL,0);
-    semid =semget(key,3,0666|IPC_CREAT);
-    
+    semid = semget(key,3,0666|IPC_CREAT);
+    if (semid==-1)
+    {
+        shmctl(shmid,IPC_RMID,NULL);
+        return 1;
+    }
     shmaddr[0] = 0;
     shmaddr[1] = 1;
     signal(SIGINT,handler);
