@@ -8,11 +8,11 @@
 #include <unistd.h>
 #include <signal.h>
 #include <sys/types.h>
-#include "strarr.h"
-#include "dictionary.h"
-#include "program.h"
-#include "job.h"
-#include "profile.h"
+#include "struct/strarr.h"
+#include "struct/dictionary.h"
+#include "struct/program.h"
+#include "struct/job.h"
+#include "struct/profile.h"
 
 /* 
  * описание конструкции try catch
@@ -56,17 +56,6 @@ static jmp_buf err;
 #define REWRITE 2
 
 Profile *user;
-
-/*костыль*/
-
-void handler(int c)
-{
-    int i;
-    for(i=0;i<user->pidlen;i++)
-    {
-        kill((pid_t)(user->pids[i]),SIGINT);
-    }
-}
 
 /*
  * считывает команду произвольного размера
@@ -404,7 +393,7 @@ Strarr* split(char* str, Dict *d)
  * работа с конвеером
  */
 
-void execute(Program *prog,int fd0,int fd1)
+void execute(Program *prog,int fd0,int fd1, int is_conveyor)
 {
     int pid;
     if ((pid=fork()) == 0)
@@ -447,14 +436,15 @@ void execute(Program *prog,int fd0,int fd1)
     
     }else
     {
-        (user->pids)[user->pidlen] = pid;
-        user->pidlen += 1;
-
         if (fd0 != 0)
             close(fd0);
+
         if (fd1 != 1)
             close(fd1);
-        wait(NULL);
+
+        if ((!is_conveyor)||(fd1 == 1)) 
+            while(pid != wait(NULL))
+                ;
     }
 }
 
@@ -576,10 +566,10 @@ void run_conveyor(Strarr* args)
         {
             pipes[i+1] = (int*)malloc(sizeof(int)*2);
             pipe(pipes[i+1]);
-            execute(j->program[i],pipes[i][0],pipes[i+1][1]);
+            execute(j->program[i],pipes[i][0],pipes[i+1][1],1);
         }
 
-        execute(j->program[i],pipes[i][0],1);
+        execute(j->program[i],pipes[i][0],1,1);
         close(pipes[i][1]);
     }
     
@@ -625,11 +615,9 @@ int main()
 {
     Strarr *args;
     char *str = NULL;
-    
-    signal(SIGINT,handler);
 
     TRY
-    {
+    {   
         user = profile_init();
         
         str = NULL;

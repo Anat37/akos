@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS= -Wall -g -ansi -pedantic
+CFLAGS= -Wall -ansi -pedantic
 
 BINARIES= first second third
 
