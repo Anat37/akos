@@ -420,15 +420,17 @@ int get_var(char* str)
             THROW(MEMORY_ERR)
         
         ans[0] = (char*)malloc(sizeof(char)*(i+1));
-        ans[1] = (char*)malloc(sizeof(char)*(strlen(str)-i+1));
+        ans[1] = (char*)malloc(sizeof(char)*(strlen(str)-i));
+
         i = 0;
-        
         while(str[i] != '=')
         {
             ans[0][i] = str[i];
             i++;
         }
+        ans[0][i] = '\0';
         i++;
+
         j = 0;
         while(str[i])
         {
@@ -436,8 +438,9 @@ int get_var(char* str)
             i++;
             j++;
         }
-
-        setenv(ans[0],ans[1],1);
+        ans[1][j] = '\0';
+        
+        setenv((const char*)ans[0],(const char*)ans[1],(int)1);
 
         free(ans[0]);
         free(ans[1]);
