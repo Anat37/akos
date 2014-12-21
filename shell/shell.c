@@ -722,6 +722,7 @@ int main()
             {
                 strarr_clear(args);
                 profile_clean(user);
+                free(str);
                 exit(1);
             }
 
