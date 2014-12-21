@@ -398,6 +398,58 @@ Strarr* split(char* str, Dict *d)
  * работа с конвеером
  */
 
+int get_var(char* str)
+{
+    int i,
+        j,
+        status = 0;
+    char** ans;
+
+    for (i=0;i<strlen(str);i++)
+        if (str[i] == '=')
+        {
+            status = 1;
+            break;
+        }
+
+    if (status == 1)
+    {
+        ans = (char**)malloc(2*sizeof(char*));
+        
+        if (ans == NULL)
+            THROW(MEMORY_ERR)
+        
+        ans[0] = (char*)malloc(sizeof(char)*(i+1));
+        ans[1] = (char*)malloc(sizeof(char)*(strlen(str)-i+1));
+        i = 0;
+        
+        while(str[i] != '=')
+        {
+            ans[0][i] = str[i];
+            i++;
+        }
+        i++;
+        j = 0;
+        while(str[i])
+        {
+            ans[1][j] = str[i];
+            i++;
+            j++;
+        }
+
+        setenv(ans[0],ans[1],1);
+
+        free(ans[0]);
+        free(ans[1]);
+        free(ans);
+
+        return 1;
+    }else
+    {
+        return 0;
+    }
+}
+
 void execute(Program *prog,int fd0,int fd1, int is_conveyor)
 {
     int pid;
@@ -436,9 +488,8 @@ void execute(Program *prog,int fd0,int fd1, int is_conveyor)
 
         strarr_push(prog->args,NULL);
         execvp(prog->args->argv[0],prog->args->argv);
-        perror("No such command\n");
+        perror("Strange command\n");
         exit(1);
-    
     }else
     {
         if (fd0 != 0)
@@ -472,6 +523,13 @@ void run_conveyor(Strarr* args)
     
     if (args == NULL)
         THROW(MEMORY_ERR)
+
+    if ((args->argc == 1)&&get_var(args->argv[0]))
+    {
+        job_clean(j);
+        program_clean(prog);
+        return;
+    }
 
     while(end < args->argc)
     {  
@@ -621,8 +679,6 @@ int main()
     Strarr *args;
     char *str = NULL;
 
-    int i;
-
     TRY
     {   
         user = profile_init();
@@ -634,11 +690,8 @@ int main()
             str = read_long_line(stdin);
             
             args = split(str,user->dictionary);
-                    
-            for (i=0;i<args->argc;i++)
-                printf("%s\n",args->argv[i]);
 
-            /*run(args);*/
+            run(args);
 
             strarr_clear(args);
             free(str);
