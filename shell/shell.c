@@ -218,6 +218,8 @@ void insert_vars(char **str,Dict *d)
             key[j-pos-1] = '\0';
             
             value = getenv(key);
+            if (value == NULL)
+                value = "";
             
             /*БАГ: а что если длинна ключа больше чем длинна значения?*/
             *str = (char*)realloc(*str,sizeof(char)*(strlen(*str) + strlen(value) - strlen(key)+1));
