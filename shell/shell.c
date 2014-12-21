@@ -221,12 +221,11 @@ void insert_vars(char **str,Dict *d)
             if (value == NULL)
                 value = "";
             
-            /*БАГ: а что если длинна ключа больше чем длинна значения?*/
-            *str = (char*)realloc(*str,sizeof(char)*(strlen(*str) + strlen(value) - strlen(key)+1));
+            *str = (char*)realloc(*str,sizeof(char)*(strlen(*str) + abs(strlen(value) - strlen(key))+1));
             if (*str == NULL)
                 THROW(MEMORY_ERR)
             strcut(*str,pos+1,i-pos-1);
-            
+
             tmp = (char*)malloc(sizeof(char)*(strlen(*str)-pos));
             if (tmp == NULL)
                 THROW(MEMORY_ERR)
@@ -238,7 +237,11 @@ void insert_vars(char **str,Dict *d)
             
             free(tmp);
             free(key);
-
+            
+            *str = (char*)realloc(*str,sizeof(char)*(strlen(*str)+1));
+            if (*str == NULL)
+                THROW(MEMORY_ERR)
+            
             i = pos;
             val = 0;
             continue;
