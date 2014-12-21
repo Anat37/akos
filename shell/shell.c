@@ -463,7 +463,7 @@ int execute(Program *prog,int fd0,int fd1)
             fd0 = open(prog->input_file,O_RDONLY);
             if (fd0<0)
             {
-                printf("Troubles with files\n")
+                printf("Troubles with files\n");
                 return EXIT;
             }
         }
@@ -680,24 +680,27 @@ int run(Strarr *args)
         if (!strcmp(args->argv[end],";"))
         {   
             tmp = strarr_slice(args,start,end);
-            strarr_clear(tmp);
             if (run_conveyor(tmp) != SUCCESS)
+            {
+                strarr_clear(tmp);
                 return EXIT;
-
+            }
+            strarr_clear(tmp);
             end++;
             start = end;
         }
         end++;
     }
-
     if (start!=end)
     {
         tmp = strarr_slice(args,start,end);
-        strarr_clear(tmp);
         if (run_conveyor(tmp) != SUCCESS)
+        {
+            strarr_clear(tmp);
             return EXIT;
+        }
+        strarr_clear(tmp);
     }
-
     return SUCCESS;
 }
 
@@ -721,15 +724,16 @@ int main()
             str = read_long_line(stdin);
             
             args = split(str);
-
-            strarr_clear(args);
             free(str);
-
+            
             if ( run(args) != SUCCESS )
             {
+                strarr_clear(args);
                 profile_clean(user);
                 exit(1);
             }
+
+            strarr_clear(args);
             
             if (feof(stdin))
             {
