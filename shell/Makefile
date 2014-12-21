@@ -9,5 +9,5 @@ shell:
 	$(CC) $(CFLAGS) -o shell shell.c $(SUBDIR)/libdata.a
 
 clean:
-	rm ./shell
 	cd $(SUBDIR);make clean
+	rm ./shell

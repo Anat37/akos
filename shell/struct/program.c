@@ -4,11 +4,17 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <sys/types.h>
 #include "strarr.h"
+
+#define ON 1
+#define OFF 0
 
 struct program
 {
     char *name;
+    pid_t pid;
+    int status;
     Strarr *args;
     char *input_file,*output_file;
     int output_type;
@@ -23,6 +29,7 @@ Program * program_init()
     prog->args = NULL;
     prog->input_file = NULL;
     prog->output_file = NULL;
+    prog->status = OFF;
     return prog;
 }
 

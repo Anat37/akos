@@ -55,6 +55,7 @@ static jmp_buf err;
 #define REWRITE 2
 
 Profile *user;
+Job *j;
 
 /*
  * считывает команду произвольного размера
@@ -452,9 +453,23 @@ int get_var(char* str)
     }
 }
 
+void handler()
+{
+    int i;
+    for (i=0;i<j->number_of_programs;i++)
+    {
+        if ( j->program[i]->status == 1)
+        {
+            printf("still working %i\n",j->program[i]->pid);
+            kill(j->program[i]->pid,SIGINT);
+        }
+    }
+    signal(SIGINT,handler);
+}
+
 int execute(Program *prog,int fd0,int fd1)
 {
-    int pid;
+    pid_t pid,tmp;
     if ((pid=fork()) == 0)
     {
         if (prog->input_file != NULL)
@@ -497,6 +512,9 @@ int execute(Program *prog,int fd0,int fd1)
         return EXIT;
     }else
     {
+        prog->pid = pid;
+        prog->status = ON;
+        printf("started process with pid = %i\n",pid);
         if (fd0 != 0)
             close(fd0);
 
@@ -504,8 +522,11 @@ int execute(Program *prog,int fd0,int fd1)
             close(fd1);
 
         if (fd1 == 1)
-            while(pid != wait(NULL))
-                ;
+            while(!(j->done))
+            {
+                tmp = wait(NULL);
+                job_turn_off(j,tmp);
+            }
 
         return SUCCESS;
     }
@@ -513,7 +534,6 @@ int execute(Program *prog,int fd0,int fd1)
 
 int run_conveyor(Strarr* args)
 {
-    Job *j = job_init();
     Program *prog = program_init();
     
     int start = 0,
@@ -526,6 +546,8 @@ int run_conveyor(Strarr* args)
 
     int **pipes;
     
+    j = job_init();
+
     if (prog == NULL)
         THROW(MEMORY_ERR)
     
@@ -713,6 +735,7 @@ int main()
     Strarr *args;
     char *str = NULL;
 
+    signal(SIGINT,handler);
     TRY
     {   
         user = profile_init();

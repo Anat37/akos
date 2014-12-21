@@ -1,14 +1,11 @@
 #ifndef _PROFILE_H
 #define _PROFILE_H
 
-#include "dictionary.h"
-
 struct profile
 {
     int pids[256];
     int pidlen;
     char* name;
-    Dict* dictionary;
 };
 
 typedef struct profile Profile;
