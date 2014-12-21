@@ -635,7 +635,7 @@ int run_conveyor(Strarr* args)
             pipe(pipes[i+1]);
             if (execute(j->program[i],pipes[i][0],pipes[i+1][1]) != SUCCESS)
             {
-                for (i1=0;i1 <= i;i1++)
+                for (i1=0;i1 <= i+1;i1++)
                     free(pipes[i1]);
                 free(pipes);
                 job_clean(j);
