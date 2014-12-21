@@ -701,15 +701,21 @@ int run(Strarr *args)
     {
         if (!strcmp(args->argv[end],";"))
         {   
-            tmp = strarr_slice(args,start,end);
-            if (run_conveyor(tmp) != SUCCESS)
+            if (start!=end)
             {
+                tmp = strarr_slice(args,start,end);
+                if (run_conveyor(tmp) != SUCCESS)
+                {
+                    strarr_clear(tmp);
+                    return EXIT;
+                }
                 strarr_clear(tmp);
-                return EXIT;
+                end++;
+                start = end;
+            }else
+            {
+                start = end+1;
             }
-            strarr_clear(tmp);
-            end++;
-            start = end;
         }
         end++;
     }
