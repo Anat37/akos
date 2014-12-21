@@ -9,7 +9,6 @@
 #include <signal.h>
 #include <sys/types.h>
 #include "struct/strarr.h"
-#include "struct/dictionary.h"
 #include "struct/program.h"
 #include "struct/job.h"
 #include "struct/profile.h"
@@ -164,7 +163,7 @@ void strcut(char* str,int pos,int len)
     str[i] = '\0';
 }
 
-void insert_vars(char **str,Dict *d)
+void insert_vars(char **str)
 {
     int pos,
         i,
@@ -278,7 +277,7 @@ void insert_vars(char **str,Dict *d)
  * 
  */
 
-Strarr* split(char* str, Dict *d)
+Strarr* split(char* str)
 {
     Strarr *res = strarr_init();
     int i,
@@ -329,7 +328,7 @@ Strarr* split(char* str, Dict *d)
                 tmp = (char*)realloc(tmp,sizeof(char)*(size+1));
                 if (tmp == NULL)
                     THROW(MEMORY_ERR)
-                insert_vars(&tmp,d);
+                insert_vars(&tmp);
                 
                 strarr_push(res,tmp);
                 size = 0;
@@ -386,7 +385,7 @@ Strarr* split(char* str, Dict *d)
     if (size!=0)
     {
         tmp[size]  = '\0';
-        insert_vars(&tmp,d);
+        insert_vars(&tmp);
         strarr_push(res,tmp);
     }
     free(tmp);
@@ -453,7 +452,7 @@ int get_var(char* str)
     }
 }
 
-void execute(Program *prog,int fd0,int fd1, int is_conveyor)
+int execute(Program *prog,int fd0,int fd1)
 {
     int pid;
     if ((pid=fork()) == 0)
@@ -463,7 +462,7 @@ void execute(Program *prog,int fd0,int fd1, int is_conveyor)
             close(fd0);
             fd0 = open(prog->input_file,O_RDONLY);
             if (fd0<0)
-                return;
+                return EXIT;
         }
 
         if (prog->output_file != NULL)
@@ -477,7 +476,7 @@ void execute(Program *prog,int fd0,int fd1, int is_conveyor)
             if (fd1<0)
             {
                 printf("No such file\n");
-                return;
+                return EXIT;
             }
         }
        
@@ -491,8 +490,8 @@ void execute(Program *prog,int fd0,int fd1, int is_conveyor)
 
         strarr_push(prog->args,NULL);
         execvp(prog->args->argv[0],prog->args->argv);
-        perror("Strange command\n");
-        exit(1);
+        perror("");
+        return EXIT;
     }else
     {
         if (fd0 != 0)
@@ -501,13 +500,14 @@ void execute(Program *prog,int fd0,int fd1, int is_conveyor)
         if (fd1 != 1)
             close(fd1);
 
-        if ((!is_conveyor)||(fd1 == 1)) 
+        if (fd1 == 1)
             while(pid != wait(NULL))
                 ;
+        return SUCCESS;
     }
 }
 
-void run_conveyor(Strarr* args)
+int run_conveyor(Strarr* args)
 {
     Job *j = job_init();
     Program *prog = program_init();
@@ -517,7 +517,8 @@ void run_conveyor(Strarr* args)
         conveyor = 0,
         end_of_args = 0,
         last_arg = 0,
-        i = 0;
+        i = 0,
+        i1 = 0;
 
     int **pipes;
     
@@ -531,7 +532,7 @@ void run_conveyor(Strarr* args)
     {
         job_clean(j);
         program_clean(prog);
-        return;
+        return SUCCESS;
     }
 
     while(end < args->argc)
@@ -548,7 +549,7 @@ void run_conveyor(Strarr* args)
             {
                 job_clean(j);
                 program_clean(prog);
-                return;
+                return SUCCESS;
             }
 
             free(strarr_pop(args,end));
@@ -567,7 +568,7 @@ void run_conveyor(Strarr* args)
             {
                 job_clean(j);
                 program_clean(prog);
-                return;
+                return SUCCESS;
             }
             free(strarr_pop(args,end));
             prog->output_file = strarr_pop(args,end); 
@@ -585,7 +586,7 @@ void run_conveyor(Strarr* args)
             {
                 job_clean(j);
                 program_clean(prog);
-                return;
+                return SUCCESS;
             }
             
             free(strarr_pop(args,end));
@@ -606,7 +607,7 @@ void run_conveyor(Strarr* args)
             {
                 job_clean(j);
                 program_clean(prog);
-                return;
+                return SUCCESS;
             }
             
             prog->args = strarr_slice(args,start,end);
@@ -632,10 +633,24 @@ void run_conveyor(Strarr* args)
         {
             pipes[i+1] = (int*)malloc(sizeof(int)*2);
             pipe(pipes[i+1]);
-            execute(j->program[i],pipes[i][0],pipes[i+1][1],1);
+            if (execute(j->program[i],pipes[i][0],pipes[i+1][1]) != SUCCESS)
+            {
+                for (i1=0;i1 <= i;i1++)
+                    free(pipes[i1]);
+                free(pipes);
+                job_clean(j);
+                return EXIT;
+            }
         }
 
-        execute(j->program[i],pipes[i][0],1,1);
+        if (execute(j->program[i],pipes[i][0],1) != SUCCESS)
+        {
+            for (i1=0;i1 <= i;i1++)
+                free(pipes[i1]);
+            free(pipes);
+            job_clean(j);
+            return EXIT;
+        }
         close(pipes[i][1]);
     }
     
@@ -644,10 +659,10 @@ void run_conveyor(Strarr* args)
     free(pipes);
 
     job_clean(j);
-    return;
+    return SUCCESS;
 }
 
-void run(Strarr *args)
+int run(Strarr *args)
 {
     int start = 0,
         end = 0;
@@ -658,7 +673,11 @@ void run(Strarr *args)
         if (!strcmp(args->argv[end],";"))
         {   
             tmp = strarr_slice(args,start,end);
-            run_conveyor(tmp);
+            if (run_conveyor(tmp) != SUCCESS)
+            {
+                strarr_clear(tmp);
+                return EXIT;
+            }
             strarr_clear(tmp);
             end++;
             start = end;
@@ -668,9 +687,14 @@ void run(Strarr *args)
     if (start!=end)
     {
         tmp = strarr_slice(args,start,end);
-        run_conveyor(tmp);
+        if (run_conveyor(tmp) != SUCCESS)
+        {
+            strarr_clear(tmp);
+            return EXIT;
+        }
         strarr_clear(tmp);
     }
+    return SUCCESS;
 }
 
 /*
@@ -692,9 +716,14 @@ int main()
             printf("%s$ ",user->name);
             str = read_long_line(stdin);
             
-            args = split(str,user->dictionary);
+            args = split(str);
 
-            run(args);
+            if ( run(args) != SUCCESS )
+            {
+                strarr_clear(args);
+                profile_clean(user);
+                exit(1);
+            }
 
             strarr_clear(args);
             free(str);
@@ -722,5 +751,4 @@ int main()
     profile_clean(user);
 
     return 0;
-
 }
