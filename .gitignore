@@ -5,3 +5,4 @@
 **/*.orig
 **/.DS_Store
 shell/.ycm_extra_conf.py
+shell/.ycm_extra_conf.pyc
