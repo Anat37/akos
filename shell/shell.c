@@ -210,15 +210,16 @@ void insert_vars(char **str,Dict *d)
                 &&(val) 
                 &&(!single_string))
         {
-            key = (char*)malloc(sizeof(char)*(i-pos+1));
+            key = (char*)malloc(sizeof(char)*(i-pos));
             if (key == NULL)
                 THROW(MEMORY_ERR)
-            for(j = pos;j<i;j++)
-                key[j-pos] = (*str)[j];
-            key[j-pos] = '\0';
+            for(j = pos+1;j<i;j++)
+                key[j-pos-1] = (*str)[j];
+            key[j-pos-1] = '\0';
             
-            value = dict_get(user->dictionary,key);
+            value = getenv(key);
             
+            /*БАГ: а что если длинна ключа больше чем длинна значения?*/
             *str = (char*)realloc(*str,sizeof(char)*(strlen(*str) + strlen(value) - strlen(key)+1));
             if (*str == NULL)
                 THROW(MEMORY_ERR)
@@ -235,7 +236,6 @@ void insert_vars(char **str,Dict *d)
             
             free(tmp);
             free(key);
-            free(value);
 
             i = pos+1;
             val = 0;
@@ -616,6 +616,8 @@ int main()
     Strarr *args;
     char *str = NULL;
 
+    int i;
+
     TRY
     {   
         user = profile_init();
@@ -627,8 +629,11 @@ int main()
             str = read_long_line(stdin);
             
             args = split(str,user->dictionary);
-            
-            run(args);
+                    
+            for (i=0;i<args->argc;i++)
+                printf("%s\n",args->argv[i]);
+
+            /*run(args);*/
 
             strarr_clear(args);
             free(str);
