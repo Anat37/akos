@@ -239,7 +239,7 @@ void insert_vars(char **str,Dict *d)
             free(tmp);
             free(key);
 
-            i = pos+1;
+            i = pos;
             val = 0;
             continue;
         }
