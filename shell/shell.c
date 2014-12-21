@@ -462,7 +462,10 @@ int execute(Program *prog,int fd0,int fd1)
             close(fd0);
             fd0 = open(prog->input_file,O_RDONLY);
             if (fd0<0)
+            {
+                printf("Troubles with files\n")
                 return EXIT;
+            }
         }
 
         if (prog->output_file != NULL)
@@ -475,7 +478,7 @@ int execute(Program *prog,int fd0,int fd1)
             
             if (fd1<0)
             {
-                printf("No such file\n");
+                printf("Troubles with files\n");
                 return EXIT;
             }
         }
@@ -503,6 +506,7 @@ int execute(Program *prog,int fd0,int fd1)
         if (fd1 == 1)
             while(pid != wait(NULL))
                 ;
+
         return SUCCESS;
     }
 }
@@ -547,6 +551,7 @@ int run_conveyor(Strarr* args)
         {
             if (last_arg)
             {
+                printf("No file\n");
                 job_clean(j);
                 program_clean(prog);
                 return SUCCESS;
@@ -566,6 +571,7 @@ int run_conveyor(Strarr* args)
         {
             if (last_arg)
             {
+                printf("No file\n");
                 job_clean(j);
                 program_clean(prog);
                 return SUCCESS;
@@ -584,6 +590,7 @@ int run_conveyor(Strarr* args)
         {
             if (last_arg)
             {
+                printf("No file\n");
                 job_clean(j);
                 program_clean(prog);
                 return SUCCESS;
@@ -673,27 +680,24 @@ int run(Strarr *args)
         if (!strcmp(args->argv[end],";"))
         {   
             tmp = strarr_slice(args,start,end);
-            if (run_conveyor(tmp) != SUCCESS)
-            {
-                strarr_clear(tmp);
-                return EXIT;
-            }
             strarr_clear(tmp);
+            if (run_conveyor(tmp) != SUCCESS)
+                return EXIT;
+
             end++;
             start = end;
         }
         end++;
     }
+
     if (start!=end)
     {
         tmp = strarr_slice(args,start,end);
-        if (run_conveyor(tmp) != SUCCESS)
-        {
-            strarr_clear(tmp);
-            return EXIT;
-        }
         strarr_clear(tmp);
+        if (run_conveyor(tmp) != SUCCESS)
+            return EXIT;
     }
+
     return SUCCESS;
 }
 
@@ -718,16 +722,14 @@ int main()
             
             args = split(str);
 
-            if ( run(args) != SUCCESS )
-            {
-                strarr_clear(args);
-                profile_clean(user);
-                free(str);
-                exit(1);
-            }
-
             strarr_clear(args);
             free(str);
+
+            if ( run(args) != SUCCESS )
+            {
+                profile_clean(user);
+                exit(1);
+            }
             
             if (feof(stdin))
             {
