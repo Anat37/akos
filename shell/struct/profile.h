@@ -3,8 +3,6 @@
 
 struct profile
 {
-    int pids[256];
-    int pidlen;
     char* name;
 };
 

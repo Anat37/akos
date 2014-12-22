@@ -574,14 +574,13 @@ int execute(Program *prog,int fd0,int fd1)
     }
 }
 
-int run_conveyor(Strarr* args)
+int run_conveyor(Strarr* args, int background)
 {
     Program *prog = program_init();
     
     int start = 0,
         end = 0,
         conveyor = 0,
-        background = 0,
         end_of_args = 0,
         last_arg = 0,
         i = 0,
@@ -590,6 +589,7 @@ int run_conveyor(Strarr* args)
     int **pipes;
     
     j = job_init();
+    j->background = background;
 
     if (prog == NULL)
         THROW(MEMORY_ERR)
@@ -611,12 +611,6 @@ int run_conveyor(Strarr* args)
         
         if (!strcmp(args->argv[end],"|"))
             conveyor = 1;
-
-        if (!strcmp(args->argv[end],"&"))
-        {
-            background = 1;
-            j->background = 1;
-        }
         
         if (!strcmp(args->argv[end],">>"))
         {
@@ -676,9 +670,9 @@ int run_conveyor(Strarr* args)
                 continue;
         }
 
-        if(conveyor || last_arg || end_of_args || background)
+        if(conveyor || last_arg || end_of_args)
         {
-            if (last_arg && (!conveyor) && (!background))
+            if (last_arg && (!conveyor))
                 end++;
 
             if (((start == end) || last_arg) && conveyor)
@@ -694,7 +688,6 @@ int run_conveyor(Strarr* args)
             prog = program_init();
 
             conveyor = 0;
-            background = 0;
             start = end+1;
         }
         end++;
@@ -739,7 +732,6 @@ int run_conveyor(Strarr* args)
         for (i = 0;i < j->number_of_programs;i++)
             free(pipes[i]);
         free(pipes);
-
         
         if (j->background)
         {
@@ -755,24 +747,29 @@ int run_conveyor(Strarr* args)
 int run(Strarr *args)
 {
     int start = 0,
-        end = 0;
+        end = 0,
+        background = 0;
+    
     Strarr *tmp;
 
     while (end < args->argc)
     {
-        if (!strcmp(args->argv[end],";"))
-        {   
+        if ((!strcmp(args->argv[end],";")) || (!strcmp(args->argv[end],"&")))
+        {
             if (start!=end)
             {
+                if (!strcmp(args->argv[end],"&"))
+                    background = 1;
+
                 tmp = strarr_slice(args,start,end);
-                if (run_conveyor(tmp) != SUCCESS)
+                if (run_conveyor(tmp,background) != SUCCESS)
                 {
                     strarr_clear(tmp);
                     return EXIT;
                 }
                 strarr_clear(tmp);
-                end++;
-                start = end;
+                start = end+1;
+                background = 0;
             }else
             {
                 start = end+1;
@@ -780,16 +777,18 @@ int run(Strarr *args)
         }
         end++;
     }
+
     if (start!=end)
     {
         tmp = strarr_slice(args,start,end);
-        if (run_conveyor(tmp) != SUCCESS)
+        if (run_conveyor(tmp,background) != SUCCESS)
         {
             strarr_clear(tmp);
             return EXIT;
         }
         strarr_clear(tmp);
     }
+
     return SUCCESS;
 }
 

@@ -7,8 +7,6 @@
 
 struct profile
 {
-    int pids[256];
-    int pidlen;
     char* name;
 };
 
@@ -19,8 +17,6 @@ Profile* profile_init()
     Profile* user = (Profile*)malloc(sizeof(Profile));
     user->name = (char*)malloc(sizeof(char)*256);
     strcpy(user->name,getenv("USER"));
-    
-    user->pidlen = 0;
 
     return user;
 }
