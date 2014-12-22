@@ -45,14 +45,19 @@ int main(int argc,char **argv)
         return 0;
     }
 
-    if ((len == recv(sockfd,&buf,BUFLEN,0))<0)
+    while(1)
     {
-        printf("error reading socket!\n");
-        return 0;
-    }
+    	if ((len == recv(sockfd,&buf,BUFLEN,0))<0)
+    	{
+        	printf("error reading socket!\n");
+        	return 0;
+    	}
     
-    printf("received : %s \n", buf);
+    	printf("received : %s \n", buf);
 
+    	if (len != BUFLEN)
+    		break;
+    }
 
     shutdown(sockfd,2);
     close(sockfd);
