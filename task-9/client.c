@@ -10,15 +10,13 @@
 #include <string.h>
 
 #define PORTNUM 80
-#define BUFLEN 2000
 
 int main(int argc,char **argv)
 {
     struct sockaddr_in party_addr;
     int sockfd;
     struct hostent *he;
-    char buf[BUFLEN];
-    int len = 0;
+    char tmp;
 
     if ((sockfd = socket(PF_INET,SOCK_STREAM,0))<0)
     {
@@ -36,29 +34,27 @@ int main(int argc,char **argv)
     {
         perror("error accepting connection!\n");
         return 0;
+    }else
+    {
+    	printf("\t___SUCCESFULLY CONNECTED TO___\n");
+    	printf("%s\n",argv[1]);
     }
-
     
-    if (send(sockfd,argv[2],strlen(argv[2])+1,0)<0)
+    if (write(sockfd,argv[2],strlen(argv[2])+1)<0)
     {
         printf("error sending socket!\n");
         return 0;
+    }else
+    {
+    	printf("\t___SENDED REQUST:___\n");
+    	printf("%s\n",argv[2]);
     }
 
-    while(1) 
-    {
-    	if ((len == recv(sockfd,&buf,BUFLEN-1,0))<0)
-    	{
-        	printf("error reading socket!\n");
-        	return 0;
-    	}
-    
-    	printf("received : %s \n", buf);
-        
-    	if (len != BUFLEN)
-    		break;
-        
-    }
+    printf("\t___I GOT:___\n");
+
+    while(read(sockfd,&tmp,1))
+        printf("%c",tmp);
+    printf("\n");
 
     shutdown(sockfd,2);
     close(sockfd);
