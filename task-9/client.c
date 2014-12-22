@@ -1,37 +1,60 @@
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <sys/in.h>
-#include <sys/signal.h>
-#include <string.h>
+#include <sys/stat.h>
 #include <stdio.h>
+#include <string.h>
+#include <fcntl.h>
 #include <unistd.h>
+#include <netdb.h>
+#include <arpa/inet.h>
+#include <string.h>
 
-#define CADDRESS "clientsocket"
-#define BUFLEN 256
+#define PORTNUM 5555
+#define BUFLEN 80
 
 int main(int argc,char **argv)
 {
-    int sockid;
-    struct sockaddr_in party_addr, own_addr;
+    struct sockaddr_in party_addr;
+    int sockfd;
+    struct hostent *he;
     char buf[BUFLEN];
+    int len = 0;
 
-    own_addr.sin_family = AF_INET;
-    own_addr.sin_port = hnons(80);
-    own_addr.sin_addr = gethostbyname(argv[1]);
+    if ((sockfd = socket(AF_INET,SOCK_STREAM,0))<0)
+    {
+        printf("cat't create socket\n");
+        return 0;
+    }
 
-    sockid = socket(AF_UNIX, SOCK_DGRAM, 0);
-    bind(sockid,(struct sockaddr *)&own_addr,sizeof(own_addr.sun_family)+strlen(own_addr.sun_path)+1);
+    memset(&party_addr, 0 , sizeof(party_addr));
+    he = gethostbyname(argv[1]);
+    memcpy(&party_addr.sin_addr, he->h_addr_list[0], he->h_length);
+    party_addr.sin_family  = AF_INET;
+    party_addr.sin_port = htons(PORTNUM);
+
+    if ((connect(sockfd, (struct sockaddr *)&party_addr, sizeof(party_addr)))<0)
+    {
+        perror("error accepting connection!\n");
+        return 0;
+    }
+
     
-    /*client*/
-    
-    party_addr.sun_family = AF_UNIX;
-    strcpy(party_addr.sun_path, SADDRESS);
-    strcpy(buf,"request");
-    sendto(sockid, buf, strlen(buf)+1, 0, (struct sockaddr*)&party_addr,sizeof(party_addr.sun_family)+strlen(SADDRESS)+1);
-    recvfrom(sockid, buf, BUFLEN, 0, NULL, 0);
-    printf("I has got answer '%s' from server\n", buf);
+    if (send(sockfd,argv[2],strlen(argv[2]),0)<0)
+    {
+        printf("error sending socket!\n");
+        return 0;
+    }
 
-    close(sockid);
-    unlink(own_addr.sun_path);
-    printf("Client closed\n");
+    if ((len == recv(sockfd,&buf,BUFLEN,0))<0)
+    {
+        printf("error reading socket!\n");
+        return 0;
+    }
+    
+    printf("received : %s \n", buf);
+
+
+    shutdown(sockfd,2);
+    close(sockfd);
+
 }
