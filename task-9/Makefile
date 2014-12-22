@@ -1,8 +1,10 @@
+FLAGS= -ansi -Wall -pedantic -g
+
 all: compile
 
 compile: 
-	gcc -ansi -Wall -pedantic -o server server.c
-	gcc -ansi -Wall -pedantic -o client client.c
+	gcc $(FLAGS) -o server server.c -lpthread
+	gcc $(FLAGS) -o client client.c
 
 clean: server client
 	rm server client

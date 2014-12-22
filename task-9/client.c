@@ -9,7 +9,7 @@
 #include <arpa/inet.h>
 #include <string.h>
 
-#define PORTNUM 5555
+#define PORTNUM 80
 #define BUFLEN 80
 
 int main(int argc,char **argv)
@@ -20,7 +20,7 @@ int main(int argc,char **argv)
     char buf[BUFLEN];
     int len = 0;
 
-    if ((sockfd = socket(AF_INET,SOCK_STREAM,0))<0)
+    if ((sockfd = socket(PF_INET,SOCK_STREAM,0))<0)
     {
         printf("cat't create socket\n");
         return 0;
@@ -39,27 +39,29 @@ int main(int argc,char **argv)
     }
 
     
-    if (send(sockfd,argv[2],strlen(argv[2]),0)<0)
+    if (send(sockfd,argv[2],strlen(argv[2])+1,0)<0)
     {
         printf("error sending socket!\n");
         return 0;
     }
 
-    while(1)
+    while(1) 
     {
-    	if ((len == recv(sockfd,&buf,BUFLEN,0))<0)
+    	if ((len = recv(sockfd,&buf,BUFLEN,0))<0)
     	{
         	printf("error reading socket!\n");
         	return 0;
     	}
     
     	printf("received : %s \n", buf);
-
+        
     	if (len != BUFLEN)
     		break;
+        
     }
 
     shutdown(sockfd,2);
     close(sockfd);
-
+    
+    return 0;
 }
