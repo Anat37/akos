@@ -39,13 +39,13 @@ int main(int argc,char **argv)
     }
 
     
-    if (send(sockfd,argv[2],strlen(argv[2]),0)<0)
+    if (send(sockfd,argv[2],strlen(argv[2])+1,0)<0)
     {
         printf("error sending socket!\n");
         return 0;
     }
 
-    while(1)
+    while(1) 
     {
     	if ((len == recv(sockfd,&buf,BUFLEN-1,0))<0)
     	{
@@ -54,12 +54,14 @@ int main(int argc,char **argv)
     	}
     
     	printf("received : %s \n", buf);
-
+        
     	if (len != BUFLEN)
     		break;
+        
     }
 
     shutdown(sockfd,2);
     close(sockfd);
-
+    
+    return 0;
 }
