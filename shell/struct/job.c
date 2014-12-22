@@ -8,7 +8,7 @@
 
 struct job
 {
-    int backgroung;
+    int background;
     int done;
     Program **program;
     int number_of_programs;
@@ -21,7 +21,7 @@ Job *job_init()
     Job *j = (Job*)malloc(sizeof(Job));
     j->program = NULL;
     j->number_of_programs = 0;
-    j->backgroung = 0;
+    j->background = 0;
     j->done = 0;
     return j;
 }
@@ -29,14 +29,21 @@ Job *job_init()
 void job_turn_off(Job *j,pid_t pid)
 {
     int i;
+    int status = 1;
     for (i = 0;i < j->number_of_programs;i++)
+    {
         if (j->program[i]->pid == pid)
         {
-            j->program[i]->status = OFF;
-            break;
+            j->program[i]->status = 0;
         }
+        
+        if (j->program[i]->status == 1)
+            status = 0;
+    }
+
     if (i == j->number_of_programs)
-        j->done = 1;
+        j->done = status;
+
     return;
 }
 

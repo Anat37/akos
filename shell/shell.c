@@ -460,7 +460,7 @@ void handler()
     {
         if ( j->program[i]->status == 1)
         {
-            printf("still working %i\n",j->program[i]->pid);
+            /*printf("still working %i\n",j->program[i]->pid);*/
             kill(j->program[i]->pid,SIGINT);
         }
     }
@@ -470,8 +470,18 @@ void handler()
 int execute(Program *prog,int fd0,int fd1)
 {
     pid_t pid,tmp;
+    int pipe_background[2],i;
+    char c;
+    if ((fd1 == 1) && (j->background))
+        pipe(pipe_background);
+
     if ((pid=fork()) == 0)
     {
+        if ((fd1 == 1) && (j->background))
+        {
+            fd1 = pipe_background[1];
+        }
+
         if (prog->input_file != NULL)
         {
             close(fd0);
@@ -514,19 +524,51 @@ int execute(Program *prog,int fd0,int fd1)
     {
         prog->pid = pid;
         prog->status = ON;
-        printf("started process with pid = %i\n",pid);
+        /*printf("pid = %i has born \n",pid);*/
+        /*printf("was background = %i\n",j->background);*/
+        
         if (fd0 != 0)
             close(fd0);
 
         if (fd1 != 1)
             close(fd1);
 
-        if (fd1 == 1)
-            while(!(j->done))
+       if (fd1 == 1)
+       {
+            if (!(j->background))
             {
-                tmp = wait(NULL);
-                job_turn_off(j,tmp);
+                while(!(j->done))
+                {
+                    tmp = wait(NULL);
+                    job_turn_off(j,tmp);
+                }
             }
+
+            if (j->background)
+            {
+                    while(!(j->done))
+                    {
+                        tmp = wait(NULL);
+                        job_turn_off(j,tmp);
+                    }
+
+                    dup2(pipe_background[0],0);
+                    close(pipe_background[0]);
+                    close(pipe_background[1]);
+                    
+                    printf("\nBackground job\n");
+                    for (i=0;i<j->number_of_programs;i++)
+                        printf("%i ",j->program[i]->pid);
+                    printf("\n");
+                    while(read(0,&c,1))
+                    {
+                        write(1,&c,1);
+                    }
+                    printf("done\n");
+                    printf("%s$ ",user->name);
+                    return EXIT;
+            }
+        }
 
         return SUCCESS;
     }
@@ -539,6 +581,7 @@ int run_conveyor(Strarr* args)
     int start = 0,
         end = 0,
         conveyor = 0,
+        background = 0,
         end_of_args = 0,
         last_arg = 0,
         i = 0,
@@ -568,6 +611,12 @@ int run_conveyor(Strarr* args)
         
         if (!strcmp(args->argv[end],"|"))
             conveyor = 1;
+
+        if (!strcmp(args->argv[end],"&"))
+        {
+            background = 1;
+            j->background = 1;
+        }
         
         if (!strcmp(args->argv[end],">>"))
         {
@@ -589,7 +638,7 @@ int run_conveyor(Strarr* args)
                 continue;
         }
         
-        if ((!end_of_args)&&(!strcmp(args->argv[end],">")))
+        if ((!end_of_args) && (!strcmp(args->argv[end],">")))
         {
             if (last_arg)
             {
@@ -608,7 +657,7 @@ int run_conveyor(Strarr* args)
                 continue;
         }
         
-        if ((!end_of_args)&&(!strcmp(args->argv[end],"<")))
+        if ((!end_of_args) && (!strcmp(args->argv[end],"<")))
         {
             if (last_arg)
             {
@@ -627,13 +676,14 @@ int run_conveyor(Strarr* args)
                 continue;
         }
 
-        if(conveyor||last_arg||end_of_args)
+        if(conveyor || last_arg || end_of_args || background)
         {
-            if ((last_arg)&&(!conveyor))
+            if (last_arg && (!conveyor) && (!background))
                 end++;
 
-            if (((start == end)||(last_arg))&&(conveyor))
+            if (((start == end) || last_arg) && conveyor)
             {
+                perror("!Error!");
                 job_clean(j);
                 program_clean(prog);
                 return SUCCESS;
@@ -644,49 +694,60 @@ int run_conveyor(Strarr* args)
             prog = program_init();
 
             conveyor = 0;
+            background = 0;
             start = end+1;
         }
         end++;
     }
     program_clean(prog); 
-    
-    pipes = (int**)malloc(sizeof(int*)*(j->number_of_programs));
-    
-    if (j->number_of_programs > 0)
-    {
-        pipes[0] = (int*)malloc(sizeof(int)*2);
-        pipe(pipes[0]);
-        pipes[0][0] = 0;
 
-        for (i = 0;i < j->number_of_programs-1;i++)
+    if ((!(j->background)) || ((j->background)&&(fork() == 0)))
+    {
+        pipes = (int**)malloc(sizeof(int*)*(j->number_of_programs));
+    
+        if (j->number_of_programs > 0)
         {
-            pipes[i+1] = (int*)malloc(sizeof(int)*2);
-            pipe(pipes[i+1]);
-            if (execute(j->program[i],pipes[i][0],pipes[i+1][1]) != SUCCESS)
+            pipes[0] = (int*)malloc(sizeof(int)*2);
+            pipe(pipes[0]);
+            pipes[0][0] = 0;
+
+            for (i = 0;i < j->number_of_programs-1;i++)
             {
-                for (i1=0;i1 <= i+1;i1++)
+                pipes[i+1] = (int*)malloc(sizeof(int)*2);
+                pipe(pipes[i+1]);
+                if (execute(j->program[i],pipes[i][0],pipes[i+1][1]) != SUCCESS)
+                {
+                    for (i1=0;i1 <= i+1;i1++)
+                        free(pipes[i1]);
+                    free(pipes);
+                    job_clean(j);
+                    return EXIT;
+                }
+            }
+
+            if (execute(j->program[i],pipes[i][0],1) != SUCCESS)
+            {
+                for (i1=0;i1 <= i;i1++)
                     free(pipes[i1]);
                 free(pipes);
                 job_clean(j);
                 return EXIT;
             }
+            close(pipes[i][1]);
         }
+    
+        for (i = 0;i < j->number_of_programs;i++)
+            free(pipes[i]);
+        free(pipes);
 
-        if (execute(j->program[i],pipes[i][0],1) != SUCCESS)
+        
+        if (j->background)
         {
-            for (i1=0;i1 <= i;i1++)
-                free(pipes[i1]);
-            free(pipes);
             job_clean(j);
             return EXIT;
-        }
-        close(pipes[i][1]);
+        }    
     }
     
-    for (i = 0;i<j->number_of_programs;i++)
-        free(pipes[i]);
-    free(pipes);
-
     job_clean(j);
     return SUCCESS;
 }
@@ -759,7 +820,7 @@ int main()
             {
                 strarr_clear(args);
                 profile_clean(user);
-                exit(1);
+                return 0;
             }
 
             strarr_clear(args);

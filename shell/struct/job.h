@@ -6,7 +6,7 @@
 
 struct job
 {
-    int backgroung;
+    int background;
     int done;
     Program **program;
     int number_of_programs;
