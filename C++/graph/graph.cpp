@@ -11,6 +11,7 @@ class map
 public:
     map();
     ~map();
+    void operator=(const map& sample);
     int add_vertice(char* name);
     char* get_vertice(int number);
     int get_number(char* name);
@@ -20,6 +21,17 @@ map::map()
 {
     names = NULL;
     number = 0;
+}
+
+void map::operator=(const map& sample)
+{
+    number = sample.number;
+    names = (char**)malloc(sizeof(char*)*number);
+    for(int i = 0; i<number; i++)
+    {
+        names[i] = (char*)malloc(sizeof(char)*(strlen(sample.names[i])+1));
+        strcpy(names[i],sample.names[i]);
+    }
 }
 
 int map::add_vertice(char* name)
@@ -57,27 +69,39 @@ class City_graph
     int* edges_len;
     int* Vertices;
     int Vertices_len;
-    map cities;
 
     void add_vertice(int v);
     void add_edge(int first,int second);
     int is_empty(char* str);
 public:
+    map cities;
     City_graph(char* filename);
+    City_graph(const City_graph& sample);
     ~City_graph();
     void print_vertices();
     void print_edges();
+    void print_neighbour(char* name);
 };
 
-int City_graph::is_empty(char* str)
+
+City_graph::City_graph(const City_graph& sample)
 {
-    while((*str == ' ')||(*str == '\n'))
-        str++;
-    
-    if (*str=='\0')
-        return 1;
-    else
-        return 0;
+    int i,j;
+    Vertices_len = sample.Vertices_len;
+    edges = (int**)malloc(sizeof(int*)*Vertices_len);
+    edges_len = (int*)malloc(sizeof(int)*Vertices_len);
+    Vertices = (int*)malloc(sizeof(int)*Vertices_len);
+    for(i = 0; i<Vertices_len; i++)
+    {
+        edges_len[i] = sample.edges_len[i];
+        edges[i] = (int*)malloc(sizeof(int)*edges_len[i]);
+        for(j = 0; j< edges_len[i]; j++)
+        {
+            edges[i][j] = sample.edges[i][j];
+        }
+        Vertices[i] = sample.Vertices[i];
+    }
+    cities = map(sample.cities);
 }
 
 City_graph::City_graph(char* filename)
@@ -129,7 +153,7 @@ City_graph::City_graph(char* filename)
                 continue;
             }   
             add_edge(city_1,city_2);
-            add_edge(city_2,city_1);
+            //add_edge(city_2,city_1); //раскоментить для не ориентированного графа
         }else
         {
             buff[strlen(buff)-1]='\0';
@@ -145,6 +169,17 @@ City_graph::~City_graph()
         free(edges[i]);
     free(edges);
     free(Vertices);
+}
+
+int City_graph::is_empty(char* str)
+{
+    while((*str == ' ')||(*str == '\n'))
+        str++;
+    
+    if (*str=='\0')
+        return 1;
+    else
+        return 0;
 }
 
 void City_graph::add_vertice(int v)
@@ -189,13 +224,16 @@ void City_graph::print_edges()
 {
     for (int i = 0; i<Vertices_len; i++)
     {
-        printf("Neighbors of vertice - \'%s\' :\n", cities.get_vertice(Vertices[i]));
-        for(int j = 0; j<edges_len[i]; j++)
-        {
-            printf("%s ",cities.get_vertice(edges[i][j]));
-        }
-        printf("\n");
+        print_neighbour(cities.get_vertice(Vertices[i]));
     }
+}
+
+void City_graph::print_neighbour(char* name)
+{
+    int v = cities.get_number(name);
+    printf("Neighbors of %s is:\n",name);
+    for(int i = 0;i<edges_len[v];i++)
+        printf("%s\n",cities.get_vertice(edges[v][i]));
 }
 
 int main()
@@ -203,6 +241,11 @@ int main()
     City_graph g((char*)"edges");
     g.print_vertices();
     g.print_edges();
+    //g.print_neighbour((char*)"moscow");
+    //City_graph q(g);
+    //q.print_vertices();
+    //q.print_edges();
+    
     return 0;
 }
 
