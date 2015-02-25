@@ -6,16 +6,50 @@
 
 class map
 {
-    char* names;
-    int* values;
+    char** names;
+    int number;
 public:
-    map()
-    {
-        names = NULL;
-        values = NULL;
-    }
-//To-do: дописать класс карты
+    map();
+    ~map();
+    int add_vertice(char* name);
+    char* get_vertice(int number);
+    int get_number(char* name);
 };
+
+map::map()
+{
+    names = NULL;
+    number = 0;
+}
+
+int map::add_vertice(char* name)
+{
+    number++;
+    names = (char**)realloc(names,sizeof(char*)*number);
+    names[number-1] = (char*)malloc(sizeof(char)*strlen(name));
+    strcpy(names[number-1],name);
+    return number-1;
+}
+
+char* map::get_vertice(int number)
+{
+    return names[number];
+}
+
+int map::get_number(char* name)
+{
+    for(int i = 0; i<number; i++)
+        if (!strcmp(names[i],name))
+            return i;
+    return -1;
+}
+
+map::~map()
+{
+    for(int i = 0; i<number; i++)
+        free(names[i]);
+    free(names);
+}
 
 class City_graph
 {
@@ -23,24 +57,17 @@ class City_graph
     int* edges_len;
     int* Vertices;
     int Vertices_len;
+    map cities;
 
     void add_vertice(int v);
     void add_edge(int first,int second);
     int is_empty(char* str);
 public:
-    City_graph();
-    void load_from_file(char* filename);
+    City_graph(char* filename);
+    ~City_graph();
     void print_vertices();
     void print_edges();
 };
-
-City_graph::City_graph()
-{
-    Vertices_len = 0;
-    Vertices = NULL;
-    edges = NULL;
-    edges_len = NULL;
-}
 
 int City_graph::is_empty(char* str)
 {
@@ -53,12 +80,18 @@ int City_graph::is_empty(char* str)
         return 0;
 }
 
-void City_graph::load_from_file(char* filename)
+City_graph::City_graph(char* filename)
 {
+    Vertices_len = 0;
+    Vertices = NULL;
+    edges = NULL;
+    edges_len = NULL;
+
     FILE* f = fopen(filename,"r");
     char buff[SIZE];
-    char *city_1,
-        *city_2;
+    char *tmp;
+    int city_1,
+        city_2;
     bool flag = 0; //0 - Vertices, 1 - Edges 
 
     while(!feof(f))
@@ -81,17 +114,37 @@ void City_graph::load_from_file(char* filename)
 
         if (flag)
         {
-            city_1 = strtok (buff,"-\n");
-            city_2 = strtok (NULL, "-\n");   
-            add_edge(atoi(city_1),atoi(city_2));
-            add_edge(atoi(city_2),atoi(city_1));
+            tmp = strtok (buff,"-\n");
+            city_1 = cities.get_number(tmp);
+            if (city_1 == -1)
+            {
+                printf("There is no vertice \'%s\'\n",tmp);
+                continue;
+            }
+            tmp = strtok (NULL,"-\n");
+            city_2 = cities.get_number(tmp);
+            if (city_2 == -1)
+            {
+                printf("There is no vertice \'%s\'\n",tmp);
+                continue;
+            }   
+            add_edge(city_1,city_2);
+            add_edge(city_2,city_1);
         }else
         {
             buff[strlen(buff)-1]='\0';
-            add_vertice(atoi(buff));
+            add_vertice(cities.add_vertice(buff));
         }
     }
     fclose(f);
+}
+
+City_graph::~City_graph()
+{
+    for(int i = 0; i<Vertices_len; i++)
+        free(edges[i]);
+    free(edges);
+    free(Vertices);
 }
 
 void City_graph::add_vertice(int v)
@@ -128,19 +181,18 @@ void City_graph::print_vertices()
     printf("Vertices:\n");
     for(int i = 0; i<Vertices_len; i++)
     {
-        printf("%i ",Vertices[i]);
+        printf("%s\n",cities.get_vertice(Vertices[i]));
     }
-    printf("\n");
 }
 
 void City_graph::print_edges()
 {
     for (int i = 0; i<Vertices_len; i++)
     {
-        printf("Neighbors of vertice - \'%i\' :\n", Vertices[i]);
+        printf("Neighbors of vertice - \'%s\' :\n", cities.get_vertice(Vertices[i]));
         for(int j = 0; j<edges_len[i]; j++)
         {
-            printf("%i ",edges[i][j]);
+            printf("%s ",cities.get_vertice(edges[i][j]));
         }
         printf("\n");
     }
@@ -148,12 +200,10 @@ void City_graph::print_edges()
 
 int main()
 {
-    City_graph g;
-    g.load_from_file((char*)"edges");
+    City_graph g((char*)"edges");
     g.print_vertices();
     g.print_edges();
     return 0;
-
 }
 
 
