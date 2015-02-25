@@ -23,8 +23,10 @@ class City_graph
     int* edges_len;
     int* Vertices;
     int Vertices_len;
+
     void add_vertice(int v);
     void add_edge(int first,int second);
+    int is_empty(char* str);
 public:
     City_graph();
     void load_from_file(char* filename);
@@ -37,6 +39,18 @@ City_graph::City_graph()
     Vertices_len = 0;
     Vertices = NULL;
     edges = NULL;
+    edges_len = NULL;
+}
+
+int City_graph::is_empty(char* str)
+{
+    while((*str == ' ')||(*str == '\n'))
+        str++;
+    
+    if (*str=='\0')
+        return 1;
+    else
+        return 0;
 }
 
 void City_graph::load_from_file(char* filename)
@@ -50,6 +64,10 @@ void City_graph::load_from_file(char* filename)
     while(!feof(f))
     {
         fgets(buff,SIZE,f);
+
+        if (is_empty(buff))
+            continue;
+
         if (!strcmp(buff,"Vertices\n"))
         {
             continue;
@@ -65,13 +83,11 @@ void City_graph::load_from_file(char* filename)
         {
             city_1 = strtok (buff,"-\n");
             city_2 = strtok (NULL, "-\n");   
-            printf("Edge between %s and %s\n",city_1,city_2);
             add_edge(atoi(city_1),atoi(city_2));
             add_edge(atoi(city_2),atoi(city_1));
         }else
         {
             buff[strlen(buff)-1]='\0';
-            printf("Vertice %s\n",buff);
             add_vertice(atoi(buff));
         }
     }
@@ -80,31 +96,16 @@ void City_graph::load_from_file(char* filename)
 
 void City_graph::add_vertice(int v)
 {
-    if (Vertices_len==0)
-    {
-        Vertices = (int*)malloc(sizeof(int));
-        edges = (int**)malloc(sizeof(int*));
-        edges_len = (int*)malloc(sizeof(int));
-    }else
-    {
-        //To-do: вкрутить защиту от повторений!
-        Vertices = (int*)realloc(Vertices, sizeof(int)*(Vertices_len+1));
-        edges = (int**)realloc(edges, sizeof(int*)*(Vertices_len+1));
-        edges_len = (int*)realloc(edges_len, sizeof(int)*(Vertices_len+1));
-    }
+   //To-do: вкрутить защиту от повторений!
+    Vertices = (int*)realloc(Vertices, sizeof(int)*(Vertices_len+1));
+    edges = (int**)realloc(edges, sizeof(int*)*(Vertices_len+1));
+    edges_len = (int*)realloc(edges_len, sizeof(int)*(Vertices_len+1));
 
-    edges_len[Vertices_len] = 0;
     Vertices[Vertices_len] = v;
-    Vertices_len++;
-}
+    edges[Vertices_len] = NULL;
+    edges_len[Vertices_len] = 0;
 
-void City_graph::print_vertices()
-{
-    int i;
-    for(i = 0; i<Vertices_len; i++)
-    {
-        printf("vertice %i is %i\n",i,Vertices[i]);
-    }
+    Vertices_len++;
 }
 
 void City_graph::add_edge(int first,int second)
@@ -113,14 +114,7 @@ void City_graph::add_edge(int first,int second)
     {
         if (Vertices[i] == first)
         {
-            printf("found vertice!\n");
-            if (edges_len[i] == 0)
-            {
-                edges[i] = (int*)malloc(sizeof(int));
-            }else
-            {
-                edges[i] = (int*)realloc(edges[i],sizeof(int)*(edges_len[i]+1));
-            }
+            edges[i] = (int*)realloc(edges[i],sizeof(int)*(edges_len[i]+1));
             edges[i][edges_len[i]] = second;
             edges_len[i]++;
             return;
@@ -129,14 +123,22 @@ void City_graph::add_edge(int first,int second)
     printf("There is no such edge!\n");
 }
 
+void City_graph::print_vertices()
+{
+    printf("Vertices:\n");
+    for(int i = 0; i<Vertices_len; i++)
+    {
+        printf("%i ",Vertices[i]);
+    }
+    printf("\n");
+}
+
 void City_graph::print_edges()
 {
-    int i,j;
-    for (i = 0; i<Vertices_len; i++)
+    for (int i = 0; i<Vertices_len; i++)
     {
-        printf("Vertice %i\n", Vertices[i]);
-        printf("Neighbors:\n");
-        for(j = 0; j<edges_len[i]; j++)
+        printf("Neighbors of vertice - \'%i\' :\n", Vertices[i]);
+        for(int j = 0; j<edges_len[i]; j++)
         {
             printf("%i ",edges[i][j]);
         }
@@ -151,12 +153,8 @@ int main()
     g.print_vertices();
     g.print_edges();
     return 0;
+
 }
-
-
-
-
-
 
 
 
