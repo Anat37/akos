@@ -243,9 +243,9 @@ int main()
     g.print_vertices();
     g.print_edges();
     //g.print_neighbour((char*)"moscow");
-    //City_graph q(g);
-    //q.print_vertices();
-    //q.print_edges();
+    City_graph q(g);
+    q.print_vertices();
+    q.print_edges();
     
     return 0;
 }
