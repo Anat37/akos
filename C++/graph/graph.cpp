@@ -138,7 +138,7 @@ City_graph::City_graph(char* filename)
 
         if (flag)
         {
-            tmp = strtok (buff,"-\n");
+            tmp = strtok(buff,"-\n");
             city_1 = cities.get_number(tmp);
             if (city_1 == -1)
             {
@@ -168,6 +168,7 @@ City_graph::~City_graph()
     for(int i = 0; i<Vertices_len; i++)
         free(edges[i]);
     free(edges);
+    free(edges_len);
     free(Vertices);
 }
 
