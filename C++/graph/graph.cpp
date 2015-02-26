@@ -38,7 +38,7 @@ int map::add_vertice(char* name)
 {
     number++;
     names = (char**)realloc(names,sizeof(char*)*number);
-    names[number-1] = (char*)malloc(sizeof(char)*strlen(name));
+    names[number-1] = (char*)malloc(sizeof(char)*strlen(name)+1);
     strcpy(names[number-1],name);
     return number-1;
 }
