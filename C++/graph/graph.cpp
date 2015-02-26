@@ -101,7 +101,7 @@ City_graph::City_graph(const City_graph& sample)
         }
         Vertices[i] = sample.Vertices[i];
     }
-    cities = map(sample.cities);
+    cities = sample.cities;
 }
 
 City_graph::City_graph(char* filename)
