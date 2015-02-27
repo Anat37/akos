@@ -24,6 +24,8 @@ int main(int argc,char **argv)
         return 0;
     }
 
+    argv[2]="GET /\n\r\n\r";
+
     memset(&party_addr, 0 , sizeof(party_addr));
     he = gethostbyname(argv[1]);
     memcpy(&party_addr.sin_addr, he->h_addr_list[0], he->h_length);
