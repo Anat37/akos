@@ -2,66 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "map.h"
+
 #define SIZE 255
-
-class map
-{
-    char** names;
-    int number;
-public:
-    map();
-    ~map();
-    void operator=(const map& sample);
-    int add_vertice(char* name);
-    char* get_vertice(int number);
-    int get_number(char* name);
-};
-
-map::map()
-{
-    names = NULL;
-    number = 0;
-}
-
-void map::operator=(const map& sample)
-{
-    number = sample.number;
-    names = (char**)malloc(sizeof(char*)*number);
-    for(int i = 0; i<number; i++)
-    {
-        names[i] = (char*)malloc(sizeof(char)*(strlen(sample.names[i])+1));
-        strcpy(names[i],sample.names[i]);
-    }
-}
-
-int map::add_vertice(char* name)
-{
-    number++;
-    names = (char**)realloc(names,sizeof(char*)*number);
-    names[number-1] = (char*)malloc(sizeof(char)*strlen(name)+1);
-    strcpy(names[number-1],name);
-    return number-1;
-}
-
-char* map::get_vertice(int number)
-{
-    return names[number];
-}
-
-int map::get_number(char* name)
-{
-    for(int i = 0; i<number; i++)
-        if (!strcmp(names[i],name))
-            return i;
-    return -1;
-}
-
-map::~map()
-{
-    for(int i = 0; i<number; i++)
-        free(names[i]);
-    free(names);
-}
 
 class City_graph
 {
@@ -185,7 +128,7 @@ int City_graph::is_empty(char* str)
 
 void City_graph::add_vertice(int v)
 {
-   //To-do: вкрутить защиту от повторений!
+   //TODO: вкрутить защиту от повторений!
     Vertices = (int*)realloc(Vertices, sizeof(int)*(Vertices_len+1));
     edges = (int**)realloc(edges, sizeof(int*)*(Vertices_len+1));
     edges_len = (int*)realloc(edges_len, sizeof(int)*(Vertices_len+1));
