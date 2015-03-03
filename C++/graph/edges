@@ -1,13 +1,18 @@
-Vertices
+vertices:
 moscow
 rim
- 
+piter 
 
 
 
     
 paris
-Edges
+
+#
+# a eto takoi komentariy
+#
+
+edges:
 
 
 

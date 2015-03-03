@@ -2,75 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "map.h"
+
 #define SIZE 255
-
-class map
-{
-    char** names;
-    int number;
-public:
-    map();
-    ~map();
-    void operator=(const map& sample);
-    int add_vertice(char* name);
-    char* get_vertice(int number);
-    int get_number(char* name);
-};
-
-map::map()
-{
-    names = NULL;
-    number = 0;
-}
-
-void map::operator=(const map& sample)
-{
-    try{
-        number = sample.number;
-        names = (char**)malloc(sizeof(char*)*number);
-        if (names == NULL)
-            throw "Memory error\n";
-        for(int i = 0; i<number; i++)
-        {
-            names[i] = (char*)malloc(sizeof(char)*(strlen(sample.names[i])+1));
-            if (names[i] == NULL)
-                throw "Memory error\n";
-            strcpy(names[i],sample.names[i]);
-        }
-    }
-}
-
-int map::add_vertice(char* name)
-{
-    number++;
-    names = (char**)realloc(names,sizeof(char*)*number);
-    names[number-1] = (char*)malloc(sizeof(char)*strlen(name)+1);
-    strcpy(names[number-1],name);
-    return number-1;
-}
-
-char* map::get_vertice(int number)
-{
-    if (number != -1)
-        return names[number];
-    return NULL;
-}
-
-int map::get_number(char* name)
-{
-    for(int i = 0; i<number; i++)
-        if (!strcmp(names[i],name))
-            return i;
-    printf("There is no vertice '%s'\n",name);
-    return -1;
-}
-
-map::~map()
-{
-    for(int i = 0; i<number; i++)
-        free(names[i]);
-    free(names);
-}
 
 class City_graph
 {
@@ -95,22 +29,30 @@ public:
 
 City_graph::City_graph(const City_graph& sample)
 {
-    int i,j;
-    Vertices_len = sample.Vertices_len;
-    edges = (int**)malloc(sizeof(int*)*Vertices_len);
-    edges_len = (int*)malloc(sizeof(int)*Vertices_len);
-    Vertices = (int*)malloc(sizeof(int)*Vertices_len);
-    for(i = 0; i<Vertices_len; i++)
-    {
-        edges_len[i] = sample.edges_len[i];
-        edges[i] = (int*)malloc(sizeof(int)*edges_len[i]);
-        for(j = 0; j< edges_len[i]; j++)
+        int i,j;
+        Vertices_len = sample.Vertices_len;
+        edges = (int**)malloc(sizeof(int*)*Vertices_len);
+        if (edges == NULL)
+            throw "Memory err!\n";
+        edges_len = (int*)malloc(sizeof(int)*Vertices_len);
+        if (edges_len == NULL)
+            throw "Memory err!\n";
+        Vertices = (int*)malloc(sizeof(int)*Vertices_len);
+        if (Vertices == NULL)
+            throw "Memory err!\n";
+        for(i = 0; i<Vertices_len; i++)
         {
-            edges[i][j] = sample.edges[i][j];
+            edges_len[i] = sample.edges_len[i];
+            edges[i] = (int*)malloc(sizeof(int)*edges_len[i]);
+            if (edges[i] == NULL)
+                throw "Memory err!\n";
+            for(j = 0; j< edges_len[i]; j++)
+            {
+                edges[i][j] = sample.edges[i][j];
+            }
+            Vertices[i] = sample.Vertices[i];
         }
-        Vertices[i] = sample.Vertices[i];
-    }
-    cities = sample.cities;
+        cities = sample.cities;
 }
 
 City_graph::City_graph(char* filename)
@@ -134,12 +76,12 @@ City_graph::City_graph(char* filename)
         if (is_empty(buff))
             continue;
 
-        if (!strcmp(buff,"Vertices\n"))
+        if (!strcmp(buff,"vertices:\n"))
         {
             continue;
         }
 
-        if (!strcmp(buff,"Edges\n"))
+        if (!strcmp(buff,"edges:\n"))
         {
             flag = 1;
             continue;
@@ -194,31 +136,38 @@ int City_graph::is_empty(char* str)
 
 void City_graph::add_vertice(int v)
 {
-   //To-do: вкрутить защиту от повторений!
-    Vertices = (int*)realloc(Vertices, sizeof(int)*(Vertices_len+1));
-    edges = (int**)realloc(edges, sizeof(int*)*(Vertices_len+1));
-    edges_len = (int*)realloc(edges_len, sizeof(int)*(Vertices_len+1));
+        Vertices = (int*)realloc(Vertices, sizeof(int)*(Vertices_len+1));
+        if (Vertices == NULL)
+            throw "Memory err!\n";
+        edges = (int**)realloc(edges, sizeof(int*)*(Vertices_len+1));
+        if (edges == NULL)
+            throw "Memory err!\n";
+        edges_len = (int*)realloc(edges_len, sizeof(int)*(Vertices_len+1));
+        if (edges_len == NULL)
+            throw "Memory err!\n";
 
-    Vertices[Vertices_len] = v;
-    edges[Vertices_len] = NULL;
-    edges_len[Vertices_len] = 0;
+        Vertices[Vertices_len] = v;
+        edges[Vertices_len] = NULL;
+        edges_len[Vertices_len] = 0;
 
-    Vertices_len++;
+        Vertices_len++;
 }
 
 void City_graph::add_edge(int first,int second)
 {
-    for (int i=0; i<Vertices_len; i++)
-    {
-        if (Vertices[i] == first)
+        for (int i=0; i<Vertices_len; i++)
         {
-            edges[i] = (int*)realloc(edges[i],sizeof(int)*(edges_len[i]+1));
-            edges[i][edges_len[i]] = second;
-            edges_len[i]++;
-            return;
+            if (Vertices[i] == first)
+            {
+                edges[i] = (int*)realloc(edges[i],sizeof(int)*(edges_len[i]+1));
+                if (edges[i] == NULL)
+                    throw "Memory err!\n";
+                edges[i][edges_len[i]] = second;
+                edges_len[i]++;
+                return;
+            }
         }
-    }
-    printf("There is no such edge!\n");
+        printf("There is no such edge!\n");
 }
 
 void City_graph::print_vertices()
@@ -263,7 +212,6 @@ int main()
     
     return 0;
 }
-
 
 
 
