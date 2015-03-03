@@ -25,12 +25,18 @@ map::map()
 
 void map::operator=(const map& sample)
 {
-    number = sample.number;
-    names = (char**)malloc(sizeof(char*)*number);
-    for(int i = 0; i<number; i++)
-    {
-        names[i] = (char*)malloc(sizeof(char)*(strlen(sample.names[i])+1));
-        strcpy(names[i],sample.names[i]);
+    try{
+        number = sample.number;
+        names = (char**)malloc(sizeof(char*)*number);
+        if (names == NULL)
+            throw "Memory error\n";
+        for(int i = 0; i<number; i++)
+        {
+            names[i] = (char*)malloc(sizeof(char)*(strlen(sample.names[i])+1));
+            if (names[i] == NULL)
+                throw "Memory error\n";
+            strcpy(names[i],sample.names[i]);
+        }
     }
 }
 
@@ -45,7 +51,9 @@ int map::add_vertice(char* name)
 
 char* map::get_vertice(int number)
 {
-    return names[number];
+    if (number != -1)
+        return names[number];
+    return NULL;
 }
 
 int map::get_number(char* name)
@@ -53,6 +61,7 @@ int map::get_number(char* name)
     for(int i = 0; i<number; i++)
         if (!strcmp(names[i],name))
             return i;
+    printf("There is no vertice '%s'\n",name);
     return -1;
 }
 
@@ -69,12 +78,12 @@ class City_graph
     int* edges_len;
     int* Vertices;
     int Vertices_len;
+    map cities;
 
     void add_vertice(int v);
     void add_edge(int first,int second);
     int is_empty(char* str);
 public:
-    map cities;
     City_graph(char* filename);
     City_graph(const City_graph& sample);
     ~City_graph();
@@ -232,6 +241,8 @@ void City_graph::print_edges()
 void City_graph::print_neighbour(char* name)
 {
     int v = cities.get_number(name);
+    if (v == -1)
+        return;
     printf("Neighbors of %s is:\n",name);
     for(int i = 0;i<edges_len[v];i++)
         printf("%s\n",cities.get_vertice(edges[v][i]));
@@ -242,7 +253,10 @@ int main()
     City_graph g((char*)"edges");
     g.print_vertices();
     g.print_edges();
-    //g.print_neighbour((char*)"moscow");
+    printf("Neighbors\n");
+    g.print_neighbour((char*)"moscow");
+    g.print_neighbour((char*)"rim");
+    g.print_neighbour((char*)"prague");
     City_graph q(g);
     q.print_vertices();
     q.print_edges();
