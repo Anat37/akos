@@ -21,37 +21,62 @@ double Complex::module()
     return sqrt(this->re*this->re+this->im*this->im);
 }
 
-void Complex::operator=(Complex sample)
+void Complex::operator = (Complex sample)
 {
     this->re = sample.re;
     this->im = sample.im;
 }
 
-Complex Complex::operator/(double sample)
+Complex Complex::operator / (double sample)
 {
     Complex tmp(this->re/sample, this->im/sample);
     return tmp;
 }
 
-Complex Complex::operator+(Complex sample)
+Complex Complex::operator += (Complex sample)
+{
+    this->re += sample.re;
+    this->im += sample.im;
+    return *this;
+}
+
+Complex Complex::operator + (Complex sample)
 {
     Complex tmp(this->re+sample.re, this->im+sample.im);
     return tmp;
 }
 
-Complex Complex::operator-(Complex sample)
+Complex Complex::operator -= (Complex sample)
+{
+    this->re -= sample.re;
+    this->im -= sample.im;
+    return *this;
+}
+
+Complex Complex::operator - (Complex sample)
 {
     Complex tmp(this->re - sample.re, this->im - sample.im);
     return tmp;
 }
 
-Complex Complex::operator*(Complex sample)
+Complex Complex::operator * (Complex sample)
 {
     Complex tmp(this->re*sample.re-this->im*sample.im,this->im*sample.re+this->re*sample.im);
     return tmp;
 }
 
-Complex Complex::operator/(Complex sample)
+Complex Complex::operator / (Complex sample)
 {
     return (*this)*sample.neg()/(sample*sample.neg()).re;
 }
+
+Complex Complex::operator - ()
+{
+    this->re = -this->re;
+    this->im = -this->im;
+    return *this;
+}
+
+
+
+
