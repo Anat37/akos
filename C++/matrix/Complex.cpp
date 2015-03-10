@@ -77,6 +77,13 @@ Complex Complex::operator - ()
     return *this;
 }
 
+int Complex::operator == (Complex sample)
+{
+    if ((this->re != sample.re)||(this->im != sample.im))
+        return 0;
+    return 1;
+}
+
 
 
 
