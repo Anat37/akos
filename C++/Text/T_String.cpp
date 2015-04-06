@@ -21,6 +21,13 @@ T_String::T_String(const T_String& sample)
     strcpy(data, sample.data);
 }
 
+T_String::T_String(const int& sample)
+{
+    data = new char[255];
+    sprintf(data, "%i", sample);
+    len = strlen(data);
+}
+
 T_String::~T_String()
 {
     delete[] data;
@@ -43,12 +50,14 @@ T_String& T_String::operator = (const T_String& sample)
 T_String T_String::operator + (const T_String& sample) const
 {
     T_String tmp;
+    delete[] tmp.data;
     tmp.len = this->len + sample.len;
     tmp.data = new char[tmp.len+1];
     strcpy(tmp.data, this->data);
     strcat(tmp.data, sample.data);
     return tmp;
 }
+
 
 size_t length(const T_String& sample)
 {
