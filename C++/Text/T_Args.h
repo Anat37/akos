@@ -11,9 +11,10 @@
 using namespace std;
 
 class T_Args{
+public:
     char *f_v, m_v;
     int w_v, t_v, r_v;
-public:
+    T_Args(const T_Args& tmp);
     T_Args(const int &argc, char** argv);
     friend ostream& operator << (ostream &os, const T_Args& tmp);
 };

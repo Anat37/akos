@@ -1,5 +1,14 @@
 #include "T_Args.h"
 
+T_Args::T_Args(const T_Args& tmp)
+{
+    f_v = tmp.f_v;
+    w_v = tmp.w_v;
+    t_v = tmp.t_v;
+    m_v = tmp.m_v;
+    r_v = tmp.r_v;
+}
+
 T_Args::T_Args(const int &argc, char** argv)
 {
     f_v = NULL;
@@ -54,6 +63,6 @@ ostream& operator << (ostream &os, const T_Args& tmp)
     os << "screen width = " << tmp.w_v << endl;
     os << "indent = " << tmp.t_v << endl;
     os << "marker = " << tmp.m_v << endl;
-    os << "red line = " << tmp.r_v;
+    os << "red line = " << tmp.r_v << endl;
     return os;
 }

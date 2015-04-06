@@ -1,13 +1,13 @@
-C=g++
-CFLAGS=-Wall -g
+CPP=g++
+CPPFLAGS=-Wall -g
 
 all: compile
 
-T_Args.o: T_Args.cpp
-	$(C) -c T_Args.cpp
+%.o : %.cpp %.h
+	$(CPP) $(CPPFLAGS) -c $<
 
-compile: text.cpp T_Args.o
-	$(C) $(CFLAGS) text.cpp T_Args.o 
+compile: text.cpp T_Args.o T_String.o
+	$(CPP) $(CPPFLAGS) text.cpp T_Args.o T_String.o 
 
 clean:
 	rm -rf a.out *.o *.dSYM
