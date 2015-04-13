@@ -8,12 +8,12 @@ class T_List
     T_String* data;
     size_t pos;
     size_t len;
-    ostream& print(ostream& os);
     virtual T_String begining(const char *tmp);
     virtual T_String ending(const char *tmp);
+    ostream& print(ostream& os);
 public:
     T_List();
-    ~T_List();
+    virtual ~T_List();
     void append(const char * tmp);
     friend ostream& operator << (ostream& os,  T_List& tmp);
 };
@@ -21,6 +21,7 @@ public:
 class Paragraph:public T_List
 {
     T_String indent;
+    int first;
     T_String begining(const char *tmp);
     T_String ending(const char *tmp);
 public:
@@ -37,7 +38,7 @@ class Unordered_List:public T_List
     T_String begining(const char *tmp);
     T_String ending(const char *tmp);
 public:
-    Unordered_List(T_Args& tmp);
+    Unordered_List(T_Args& tmp, int t_lvl = 0);
     void next_level();
     void prev_level();
 };
@@ -52,7 +53,7 @@ class Ordered_List:public T_List
     T_String begining(const char *tmp);
     T_String ending(const char *tmp);
 public:
-    Ordered_List(T_Args& tmp);
+    Ordered_List(T_Args& tmp, int t_lvl = 0);
     ~Ordered_List();
     void next_level();
     void prev_level();
@@ -66,7 +67,7 @@ class Header: public T_List
     T_String begining(const char* tmp);
     T_String ending(const char* tmp);
 public:
-    Header(const T_Args& args);
+    Header(const T_Args& args, int t_lvl = 0);
     void next_level();
     void prev_level();
 };

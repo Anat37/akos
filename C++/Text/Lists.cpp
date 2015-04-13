@@ -44,8 +44,9 @@ ostream& T_List::print(ostream& os)
 {
     for (size_t i = 0; i<pos; i++)
     {
-        os<< data[i] << endl;
+        os << data[i] << endl;
     }
+    os << endl;
     return os;
 }
 
@@ -63,16 +64,24 @@ Paragraph::Paragraph(T_Args& tmp)
     tmp_indent[tmp.r_v] = '\0';
     indent = T_String(tmp_indent);
     delete[] tmp_indent;
+    first = 1;
 }
 
 T_String Paragraph::begining(const char *tmp) 
 {
-    return indent;
+    if (first)
+    {
+        first = 0;
+        return indent;
+    }else
+    {
+        return T_String();
+    }
 }
 
 T_String Paragraph::ending(const char *tmp) 
 {
-    return T_String("\n");
+    return T_String();
 }
 
 //--------------------------------------------------Unoredered list--------------------------------------------
@@ -98,11 +107,11 @@ void Unordered_List::prev_level()
     set_level(--level);
 }
 
-Unordered_List::Unordered_List(T_Args& tmp)
+Unordered_List::Unordered_List(T_Args& tmp, int t_lvl)
 {
     m_v = tmp.m_v;
     t_v = tmp.t_v;
-    set_level(0);
+    set_level(t_lvl);
 }
 
 T_String Unordered_List::begining(const char *tmp) 
@@ -146,12 +155,12 @@ void Ordered_List::prev_level()
     set_level(--level);
 }
 
-Ordered_List::Ordered_List(T_Args& tmp)
+Ordered_List::Ordered_List(T_Args& tmp, int t_lvl)
 {
     counter = new int[1];
     counter[0] = 0;
     t_v = tmp.t_v;
-    set_level(0);
+    set_level(t_lvl);
 }
 
 Ordered_List::~Ordered_List()
@@ -173,9 +182,9 @@ T_String Ordered_List::ending(const char *tmp)
 //--------------------------------------------------Header-----------------------------------------------------
 
 
-Header::Header(const T_Args& args)
+Header::Header(const T_Args& args, int t_lvl)
 {
-    level = 0;
+    level = t_lvl;
     w_v = args.w_v;
 }
 
@@ -189,8 +198,8 @@ T_String Header::begining(const char *tmp)
     int border_start = w_v/2-strlen(tmp)/2;
     char* tmp_indent = new char[border_start+1];
     memset(tmp_indent, ' ' , border_start*sizeof(char));
-    for (int i = 0; i < level+1; i++)
-        tmp_indent[border_start-level-1+i] = '#';
+    for (int i = 0; i < level; i++)
+        tmp_indent[border_start-level+i] = '#';
     tmp_indent[border_start] = '\0';
 
     indent = T_String(border) + T_String(tmp_indent);
@@ -202,13 +211,14 @@ T_String Header::begining(const char *tmp)
 
 T_String Header::ending(const char *tmp)
 {
-    char *border = new char[w_v+1];
+    char *border = new char[w_v];
     memset(border, '#', w_v);
-    border[w_v-1] = '\n';
-    border[w_v] = '\0';
+    border[w_v-1] = '\0';
+
 
     char* tmp_indent = new char[level+3];
     memset(tmp_indent, '#', level+1);
+    tmp_indent[0] = ' ';
     tmp_indent[level+1] = '\n';
     tmp_indent[level+2] = '\0';
 
