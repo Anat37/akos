@@ -17,6 +17,13 @@ T_String::T_String(const char* sample)
     }
 }
 
+T_String::T_String(const char sample)
+{
+    data = new char[2];
+    data[0] = sample;
+    data[1] = '\0';
+}
+
 T_String::T_String(const int& sample)
 {
     data = new char[255];
@@ -68,3 +75,14 @@ T_String T_String::operator + (const T_String& sample)
     strcat(tmp.data, sample.data);
     return tmp;
 }
+
+T_String T_String::slice(size_t from, size_t to)
+{
+    T_String tmp(*this);
+    size_t i = 0;
+    for(i = 0; i<to-from; i++)
+        tmp[i] = tmp[i+from];
+    tmp[i] = '\0';
+    return tmp;
+}
+

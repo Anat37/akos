@@ -167,47 +167,6 @@ T_Line_Type get_type_and_strip(T_String& str)
     return type;
 }
 
-void split_by_words(T_String& str, int w_v, int level = 0)
-{
-    int col = 0,
-    last_pos = 0,
-    i = 0;
-
-    for(i = 0; str[i]; i++, col++)
-    {
-        if ((str[i] == ' ')&&(col<=w_v))
-        {
-            last_pos = i;
-        }
-
-        if (col>w_v)
-        {
-            if (i-last_pos>w_v)
-            {
-                cout<<"word len error!"<<endl;
-                exit(0);
-            }else
-            {
-                str[last_pos] = '\n';
-                i = ++last_pos;
-                col = 0;
-            }
-        }
-    }
-
-    if (col>w_v)
-    {
-        if (i-last_pos>w_v)
-        {
-            cout<<"word len error!"<<endl;
-            exit(0);
-        }else
-        {
-            str[last_pos] = '\n';
-        }
-    }
-}
-
 int main(int argc, char** argv)
 {
     T_Args args(argc, argv);
@@ -337,5 +296,6 @@ int main(int argc, char** argv)
     }
 
     cout<< a;
+    
     return 0;
 }

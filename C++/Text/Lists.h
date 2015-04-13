@@ -10,6 +10,7 @@ class T_List
     size_t len;
     virtual T_String begining(const char *tmp);
     virtual T_String ending(const char *tmp);
+    virtual T_String split_by_words(T_String str);
     ostream& print(ostream& os);
 public:
     T_List();
@@ -21,7 +22,8 @@ public:
 class Paragraph:public T_List
 {
     T_String indent;
-    int first;
+    int first, w_v;
+    T_String split_by_words(T_String str);
     T_String begining(const char *tmp);
     T_String ending(const char *tmp);
 public:
@@ -32,9 +34,11 @@ class Unordered_List:public T_List
 {
     T_String indent;
     int level;
-    int t_v;
+    int t_v,
+    w_v;
     char m_v;
     void set_level(int new_level);
+    T_String split_by_words(T_String str);
     T_String begining(const char *tmp);
     T_String ending(const char *tmp);
 public:

@@ -36,7 +36,7 @@ void T_List::append(const char* tmp)
         data = n_data;
     }
 
-    data[pos] = begining(tmp)+T_String(tmp)+ending(tmp);
+    data[pos] = split_by_words(begining(tmp)+T_String(tmp)+ending(tmp));
     pos += 1;
 }
 
@@ -55,6 +55,11 @@ ostream& operator << (ostream& os,  T_List& tmp)
     return (&tmp)->print(os);
 }
 
+T_String T_List::split_by_words(T_String str)
+{
+    return str;
+}
+
 //--------------------------------------------------Paragraph--------------------------------------------------
 
 Paragraph::Paragraph(T_Args& tmp)
@@ -65,6 +70,7 @@ Paragraph::Paragraph(T_Args& tmp)
     indent = T_String(tmp_indent);
     delete[] tmp_indent;
     first = 1;
+    w_v = tmp.w_v;
 }
 
 T_String Paragraph::begining(const char *tmp) 
@@ -84,15 +90,58 @@ T_String Paragraph::ending(const char *tmp)
     return T_String();
 }
 
+T_String Paragraph::split_by_words(T_String str)
+{
+    int col = 0,
+    last_pos = 0,
+    i = 0;
+
+    for(i = 0; str[i]; i++, col++)
+    {
+        if ((str[i] == ' ')&&(col<=w_v))
+        {
+            last_pos = i;
+        }
+
+        if (col>w_v)
+        {
+            if (i-last_pos>w_v)
+            {
+                cout<<"word len error!"<<endl;
+                exit(0);
+            }else
+            {
+                str[last_pos] = '\n';
+                i = ++last_pos;
+                col = 0;
+            }
+        }
+    }
+
+    if (col>w_v)
+    {
+        if (i-last_pos>w_v)
+        {
+            cout<<"word len error!"<<endl;
+            exit(0);
+        }else
+        {
+            str[last_pos] = '\n';
+        }
+    }
+
+    return str;
+}
+
+
 //--------------------------------------------------Unoredered list--------------------------------------------
 
 void Unordered_List::set_level(int new_level)
 {
     level = new_level;
-    char* tmp_indent = new char[2*level+t_v+2];
+    char* tmp_indent = new char[2*level+t_v+1];
     memset(tmp_indent, ' ' , (2*level+t_v)*sizeof(char));
-    tmp_indent[2*level+t_v] = m_v;
-    tmp_indent[2*level+t_v+1] = '\0';
+    tmp_indent[2*level+t_v] = '\0';
     indent = T_String(tmp_indent);
     delete[] tmp_indent;
 }
@@ -111,17 +160,60 @@ Unordered_List::Unordered_List(T_Args& tmp, int t_lvl)
 {
     m_v = tmp.m_v;
     t_v = tmp.t_v;
+    w_v = tmp.w_v;
     set_level(t_lvl);
 }
 
 T_String Unordered_List::begining(const char *tmp) 
 {
-    return indent;
+    return indent+T_String(m_v);
 }
 
 T_String Unordered_List::ending(const char *tmp) 
 {
     return T_String();
+}
+
+T_String Unordered_List::split_by_words(T_String str)
+{
+    int col = 0,
+    last_pos = 0,
+    i = 0;
+
+    for(i = 0; str[i]; i++, col++)
+    {
+        if ((str[i] == ' ')&&(col<=w_v))
+        {
+            last_pos = i;
+        }
+
+        if (col>w_v)
+        {
+            if (i-last_pos+t_v>w_v)
+            {
+                cout<<"word len error!"<<endl;
+                exit(0);
+            }else
+            {
+                str = str.slice(0, last_pos)+T_String('\n')+indent+str.slice(last_pos+1, strlen(str));
+                i = ++last_pos;
+                col = 0;
+            }
+        }
+    }
+
+    if (col>w_v)
+    {
+        if (i-last_pos+t_v>w_v)
+        {
+            cout<<"word len error!"<<endl;
+            exit(0);
+        }else
+        {
+            str = str.slice(0, last_pos)+T_String('\n')+indent+str.slice(last_pos+1, strlen(str));
+        }
+    }
+    return str;
 }
 
 //--------------------------------------------------Oredered list----------------------------------------------
