@@ -38,6 +38,7 @@ class Unordered_List:public T_List
     w_v;
     char m_v;
     void set_level(int new_level);
+    size_t get_indent(T_String str);
     T_String split_by_words(T_String str);
     T_String begining(const char *tmp);
     T_String ending(const char *tmp);
@@ -51,9 +52,12 @@ class Ordered_List:public T_List
 {
     T_String indent;
     int level;
-    int t_v;
+    int t_v,
+    w_v;
     int *counter;
     void set_level(int new_level);
+    size_t get_indent(T_String str);
+    T_String split_by_words(T_String str);
     T_String begining(const char *tmp);
     T_String ending(const char *tmp);
 public:
@@ -65,9 +69,11 @@ public:
 
 class Header: public T_List
 {
-    T_String indent;
+    T_String border;
     int level;
     int w_v;
+    T_String get_start_indent(T_String str);
+    T_String split_by_words(T_String str);
     T_String begining(const char* tmp);
     T_String ending(const char* tmp);
 public:
