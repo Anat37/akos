@@ -1,34 +1,34 @@
 #include "Lists.h"
 
-T_List::T_List()
+Abstract_Class::Abstract_Class()
 {
     data = new T_String[1];
     pos = 0;
     len = 1;
 }
 
-T_List::~T_List()
+Abstract_Class::~Abstract_Class()
 {
     delete[] data;
 }
 
-T_String T_List::begining(const char *tmp) 
+T_String Abstract_Class::begining(const char *tmp) 
 {
     return T_String();
 }
 
-T_String T_List::ending(const char *tmp) 
+T_String Abstract_Class::ending(const char *tmp) 
 {
     return T_String();
 }
 
-void T_List::append(const char* tmp)
+void Abstract_Class::append(const char* tmp)
 {
     if (pos==len)
     {
         len *= 2;
         T_String* n_data = new T_String[len];
-        for(size_t i = 0; i<pos; i++)
+        for(int i = 0; i<pos; i++)
         {
             n_data[i] = data[i];
         }
@@ -40,9 +40,9 @@ void T_List::append(const char* tmp)
     pos += 1;
 }
 
-ostream& T_List::print(ostream& os) 
+ostream& Abstract_Class::print(ostream& os) 
 {
-    for (size_t i = 0; i<pos; i++)
+    for (int i = 0; i<pos; i++)
     {
         os << data[i] << endl;
     }
@@ -50,12 +50,12 @@ ostream& T_List::print(ostream& os)
     return os;
 }
 
-ostream& operator << (ostream& os,  T_List& tmp)
+ostream& operator << (ostream& os,  Abstract_Class& tmp)
 {
     return (&tmp)->print(os);
 }
 
-T_String T_List::split_by_words(T_String str)
+T_String Abstract_Class::split_by_words(T_String str)
 {
     return str;
 }
@@ -174,9 +174,9 @@ T_String Unordered_List::ending(const char *tmp)
     return T_String();
 }
 
-size_t Unordered_List::get_indent(T_String str)
+int Unordered_List::get_indent(T_String str)
 {
-    size_t i=0;
+    int i=0;
     for(i=0; str[i] !='*'; i++);
     return i+1;
 }
@@ -279,9 +279,9 @@ T_String Ordered_List::ending(const char *tmp)
     return T_String();
 }
 
-size_t Ordered_List::get_indent(T_String str)
+int Ordered_List::get_indent(T_String str)
 {
-    size_t i=0;
+    int i=0;
     for(i=0; str[i] !='.'; i++);    
     return i+1;
 }
@@ -440,7 +440,7 @@ T_String Header::get_start_indent(T_String str)
 {
     if (strlen(str)>w_v)
         return str;
-    size_t pos = (w_v-strlen(str))/2;
+    int pos = (w_v-strlen(str))/2;
     char *indent_start = new char [pos+2];
     memset(indent_start, ' ', pos);
     indent_start[pos] = '\0';

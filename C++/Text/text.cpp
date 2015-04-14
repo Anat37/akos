@@ -17,13 +17,13 @@ struct T_Line_Type
 class TextViewer
 {
     FILE* fp;
-    T_List **list;
+    Abstract_Class **list;
     size_t pos, len;
 public:
     TextViewer(const T_Args& args);
     ~TextViewer();
     T_String read_long_line();
-    void append(T_List *tmp);
+    void append(Abstract_Class *tmp);
     friend ostream& operator << (ostream& os,  TextViewer& tmp);
 };
 
@@ -32,7 +32,7 @@ TextViewer::TextViewer(const T_Args& args)
     fp = fopen(args.f_v, "r");
     pos = 0;
     len = 1;
-    list = new T_List*[len];
+    list = new Abstract_Class*[len];
 }
 
 TextViewer::~TextViewer()
@@ -43,12 +43,12 @@ TextViewer::~TextViewer()
     delete[] list;
 }
 
-void TextViewer::append(T_List *tmp)
+void TextViewer::append(Abstract_Class *tmp)
 {
     if (pos == len)
     {
         len *= 2;
-        T_List **tmp_arr = new T_List*[len];
+        Abstract_Class **tmp_arr = new Abstract_Class*[len];
         for (size_t i = 0; i < pos; i++)
             tmp_arr[i] = list[i];
         delete[] list;
