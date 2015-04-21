@@ -79,3 +79,40 @@ T_String Unordered_List::split_by_words(T_String str, int curr_level)
     }
     return str;
 }
+
+void Unordered_List::print() 
+{
+    T_String ans;
+    for (size_t i = 0; i<pos; i++)
+    {
+        ans = ans + begining(data[i], levels[i]) + split_by_words( data[i], levels[i]) + ending(data[i], levels[i]) + T_String('\n');
+    }
+    ans = ans + T_String('\n');
+    cout << ans;
+}
+
+unsigned long int Unordered_List::countSymbols()
+{
+    T_String ans;
+    for (size_t i = 0; i<pos; i++)
+    {
+        ans = ans + begining(data[i], levels[i]) + split_by_words( data[i], levels[i]) + ending(data[i], levels[i]) + T_String('\n');
+    }
+    ans = ans + T_String('\n');
+
+    return strlen(ans);
+} 
+
+unsigned long int Unordered_List::countWords()
+{
+    unsigned long int count = 0;
+    for (size_t i = 0; i<pos; i++)
+    {
+        for(size_t j = 0; j<strlen(data[i]); j++)
+        {
+            if ((data[i][j] == ' ')||(data[i][j] == '\n'))
+                count += 1;
+        }
+    }
+    return count;
+}

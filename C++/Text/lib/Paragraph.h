@@ -12,9 +12,10 @@ class Paragraph:public T_List
     T_String split_by_words(T_String str, int curr_level);
     T_String begining(T_String tmp, int curr_level);
     T_String ending(T_String tmp, int curr_level);
-    unsigned long int countSymbols() const { return 0;} 
-    unsigned long int countWords() const { return 0;}
 public:
+    unsigned long int countSymbols();
+    unsigned long int countWords();
+    void print();
     Paragraph(T_Args& tmp);
 };
 

@@ -117,3 +117,40 @@ T_String Header::get_start_indent(T_String str)
     delete[] indent_start;
     return str_indent_start+str;
 }
+
+void Header::print() 
+{
+    T_String ans;
+    for (size_t i = 0; i<pos; i++)
+    {
+        ans = ans + begining(data[i], levels[i]) + split_by_words( data[i], levels[i]) + ending(data[i], levels[i]) + T_String('\n');
+    }
+    ans = ans + T_String('\n');
+    cout << ans;
+}
+
+unsigned long int Header::countSymbols()
+{
+    T_String ans;
+    for (size_t i = 0; i<pos; i++)
+    {
+        ans = ans + begining(data[i], levels[i]) + split_by_words( data[i], levels[i]) + ending(data[i], levels[i]) + T_String('\n');
+    }
+    ans = ans + T_String('\n');
+
+    return strlen(ans);
+} 
+
+unsigned long int Header::countWords()
+{
+    unsigned long int count = 0;
+    for (size_t i = 0; i<pos; i++)
+    {
+        for(size_t j = 0; j<strlen(data[i]); j++)
+        {
+            if ((data[i][j] == ' ')||(data[i][j] == '\n'))
+                count += 1;
+        }
+    }
+    return count;
+}

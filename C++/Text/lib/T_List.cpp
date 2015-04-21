@@ -52,21 +52,6 @@ void T_List::append(const char* tmp)
     ++pos;
 }
 
-ostream& T_List::print(ostream& os) 
-{
-    for (size_t i = 0; i<pos; i++)
-    {
-        os << begining(data[i], levels[i]) + split_by_words( data[i], levels[i]) + ending(data[i], levels[i]) << endl;
-    }
-    os << endl;
-    return os;
-}
-
-ostream& operator << (ostream& os,  T_List& tmp)
-{
-    return (&tmp)->print(os);
-}
-
 T_String T_List::split_by_words(T_String str, int curr_level)
 {
     return str;

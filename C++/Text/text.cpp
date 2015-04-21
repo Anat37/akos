@@ -24,13 +24,11 @@ class TextViewer
     T_List **list;
     size_t pos, len;
 public:
-    //void strip_string(T_String& str, int pos);
-    //T_Line_Type get_type_and_strip(T_String& str);
     TextViewer(const T_Args& args);
     ~TextViewer();
     T_String read_long_line();
     void append(T_List *tmp);
-    friend ostream& operator << (ostream& os,  TextViewer& tmp);
+    void print();
     void proceed(int argc, char** argv);
 };
 
@@ -103,13 +101,18 @@ T_String TextViewer::read_long_line()
     return line;
 }
 
-ostream& operator << (ostream& os,  TextViewer& tmp)
+void TextViewer::print()
 {
-    for (size_t i = 0; i<tmp.pos; i++)
+    unsigned long int sumCountSymbols = 0;
+    unsigned long int sumCountWords = 0;
+    for (size_t i = 0; i<pos; i++)
     {
-        os << *tmp.list[i];
+        list[i]->print();
+        sumCountSymbols+=list[i]->countSymbols();
+        sumCountWords+=list[i]->countWords();
     }
-    return os;
+
+    cerr << sumCountSymbols<< endl << sumCountWords + 1<< endl;
 }
 
 void strip_string(T_String& str, int pos)
@@ -302,7 +305,7 @@ int main(int argc, char** argv)
         a.append(p_tmp);
     }
 
-    cout << a;
+    a.print();
 
     return 0;
 }
