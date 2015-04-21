@@ -1,12 +1,16 @@
 #include <iostream>
 
-#include "T_Args.h"
-#include "T_String.h"
-#include "Lists.h"
+#include "lib/T_List.h"
+#include "lib/Header.h"
+#include "lib/Paragraph.h"
+#include "lib/Unordered_List.h"
+#include "lib/Ordered_List.h"
+#include "lib/T_String.h"
+#include "lib/T_Args.h"
 
 using namespace std;
 
-enum T_Type {E_Paragraph, E_Unordered_List, E_Ordered_List, E_Header};
+enum T_Type { E_Paragraph, E_Unordered_List, E_Ordered_List, E_Header };
 
 struct T_Line_Type
 {
@@ -17,14 +21,17 @@ struct T_Line_Type
 class TextViewer
 {
     FILE* fp;
-    Abstract_Class **list;
+    T_List **list;
     size_t pos, len;
 public:
+    //void strip_string(T_String& str, int pos);
+    //T_Line_Type get_type_and_strip(T_String& str);
     TextViewer(const T_Args& args);
     ~TextViewer();
     T_String read_long_line();
-    void append(Abstract_Class *tmp);
+    void append(T_List *tmp);
     friend ostream& operator << (ostream& os,  TextViewer& tmp);
+    void proceed(int argc, char** argv);
 };
 
 TextViewer::TextViewer(const T_Args& args)
@@ -32,7 +39,7 @@ TextViewer::TextViewer(const T_Args& args)
     fp = fopen(args.f_v, "r");
     pos = 0;
     len = 1;
-    list = new Abstract_Class*[len];
+    list = new T_List*[len];
 }
 
 TextViewer::~TextViewer()
@@ -43,12 +50,12 @@ TextViewer::~TextViewer()
     delete[] list;
 }
 
-void TextViewer::append(Abstract_Class *tmp)
+void TextViewer::append(T_List *tmp)
 {
     if (pos == len)
     {
         len *= 2;
-        Abstract_Class **tmp_arr = new Abstract_Class*[len];
+        T_List **tmp_arr = new T_List*[len];
         for (size_t i = 0; i < pos; i++)
             tmp_arr[i] = list[i];
         delete[] list;
@@ -295,6 +302,7 @@ int main(int argc, char** argv)
         a.append(p_tmp);
     }
 
-    cout<< a;
+    cout << a;
+
     return 0;
 }

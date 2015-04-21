@@ -1,13 +1,15 @@
 CPP=g++
 CPPFLAGS=-Wall -g
+SUBDIR = lib
 
-all: compile
+all: libs compile
 
-%.o : %.cpp %.h
-	$(CPP) $(CPPFLAGS) -c $<
+libs:
+	make -C lib libdata.a
 
-compile: text.cpp T_Args.o T_String.o Lists.o
-	$(CPP) $(CPPFLAGS) text.cpp T_Args.o T_String.o Lists.o
+compile: text.cpp
+	$(CPP) $(CPPFLAGS) text.cpp $(SUBDIR)/libdata.a
 
 clean:
-	rm -rf a.out *.o *.dSYM
+	make -C lib clean
+	rm -rf a.out *.dSYM
