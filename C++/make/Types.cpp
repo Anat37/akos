@@ -24,7 +24,7 @@ T_String::T_String(const char sample)
     data[1] = '\0';
 }
 
-T_String::T_String(const int& sample)
+T_String::T_String(const int sample)
 {
     data = new char[255];
     sprintf(data, "%i", sample);
@@ -137,4 +137,79 @@ int T_String::empty()
             return 1;
         }
     return 0;
+}
+
+Base<T_String> T_String::split()
+{
+    Base<T_String> ans;
+    int i, last_pos = 0;
+    for(i = 0; (*this)[i] ;i++)
+    {
+        if ((*this)[i] == ' ')
+        {
+            ans.append((*this).slice(last_pos, i));
+            last_pos = i+1;
+        }
+    }
+
+    if (i!= last_pos)
+        ans.append((*this).slice(last_pos, i));
+
+    return ans;
+}
+
+//----------------------------------------------------------------------------------------------------------------------------------
+
+Node::Node(const Node& sample)
+{
+    left_header = sample.left_header;
+    right_header = sample.right_header;
+    pos = sample.pos;
+    max_size = sample.max_size;
+    delete[] data;
+    data = new T_String[sample.max_size];
+    for(int i=0; i<pos; i++)
+        data[i] = sample.data[i];
+}
+
+void Node::append_header(T_String sample)
+{
+    int index = sample.index(':');
+    left_header = sample.slice(0, index).strip();
+    right_header = sample.slice(index+1, strlen(sample)).strip().split();
+}
+
+void Node::print()
+{
+    cout<<"left header = "<<left_header<<endl;
+    cout<<"right_header = ";
+    for(int i = 0; i<right_header.len(); i++)
+        cout<<right_header[i]<<'|';
+    cout<<endl;
+
+    for(int i = 0; i < pos ;i++)
+    {
+        cout<<data[i]<<endl;
+    }
+}
+
+Node& Node::operator = (const Node& sample)
+{
+    left_header = sample.left_header;
+    right_header = sample.right_header;
+    pos = sample.pos;
+    max_size = sample.max_size;
+    delete[] data;
+    data = new T_String[sample.max_size];
+    for(int i=0; i<pos; i++)
+        data[i] = sample.data[i];
+    return *this;
+}
+
+//----------------------------------------------------------------------------------------------------------------------------------
+
+void Module::print()
+{
+    for(int i = 0; i<pos; i++)
+        data[i].print();
 }

@@ -1,9 +1,9 @@
-hello : world
-	qwe
-	asd
-	zxc
+bye : make.cpp Types.cpp hello
+	echo "hello world!"
+	echo "hello world!!"
 
-bye : world
-	fuck 
-	this 
-	shit
+hello : shit
+	echo "hello"
+
+shit :
+	echo "shit"
