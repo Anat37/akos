@@ -42,6 +42,15 @@ T_String::T_String(const T_String& sample)
     }
 }
 
+T_String::T_String(const Base<char>& sample)
+{
+    data = new char[sample.len()+1];
+    int i;
+    for(i = 0; i<sample.len(); i++)
+        data[i] = sample[i];
+    data[i] = '\0';
+}
+
 T_String::~T_String()
 {
     delete[] data;
@@ -172,19 +181,21 @@ Node::Node(const Node& sample)
         data[i] = sample.data[i];
 }
 
-void Node::append_header(T_String sample)
+void Node::append_left_header(T_String sample)
 {
-    int index = sample.index(':');
-    left_header = sample.slice(0, index).strip();
-    right_header = sample.slice(index+1, strlen(sample)).strip().split();
+    left_header = sample.strip();
+}
+
+void Node::append_right_header(T_String sample)
+{
+    right_header = sample.strip().split();
 }
 
 void Node::print()
 {
-    cout<<"left header = "<<left_header<<endl;
-    cout<<"right_header = ";
+    cout<<"left header = "<<left_header<<"; right_header = ";
     for(int i = 0; i<right_header.len(); i++)
-        cout<<right_header[i]<<'|';
+        cout<<right_header[i]<<' ';
     cout<<endl;
 
     for(int i = 0; i < pos ;i++)
@@ -205,6 +216,7 @@ Node& Node::operator = (const Node& sample)
         data[i] = sample.data[i];
     return *this;
 }
+
 
 //----------------------------------------------------------------------------------------------------------------------------------
 

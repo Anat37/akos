@@ -1,9 +1,9 @@
-bye : make.cpp Types.cpp hello
+bye : make.cpp Types.cpp hello tmp
 	echo "hello world!"
 	echo "hello world!!"
 
-hello : shit
-	echo "hello"
+hello : tmp
+	echo "second"
 
-shit :
-	echo "shit"
+tmp :
+	echo "first"

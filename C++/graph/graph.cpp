@@ -202,13 +202,13 @@ int main()
     City_graph g((char*)"edges");
     g.print_vertices();
     g.print_edges();
-    printf("Neighbors\n");
-    g.print_neighbour((char*)"moscow");
-    g.print_neighbour((char*)"rim");
-    g.print_neighbour((char*)"prague");
-    City_graph q(g);
-    q.print_vertices();
-    q.print_edges();
+    //printf("Neighbors\n");
+    //g.print_neighbour((char*)"moscow");
+    //g.print_neighbour((char*)"rim");
+    //g.print_neighbour((char*)"prague");
+    //City_graph q(g);
+    //q.print_vertices();
+    //q.print_edges();
     
     return 0;
 }

@@ -16,6 +16,7 @@ public:
     T_String(const char sample);
     T_String(const int sample);
     T_String(const T_String& sample);
+    T_String(const Base<char>& sample);
     ~T_String();
     operator char *();
     T_String& operator = (const T_String& sample);
@@ -38,11 +39,12 @@ protected:
 public:
     Base();
     Base(const Base& sample);
-    ~Base();
+    virtual ~Base();
     virtual Base<T>& operator = (Base<T> sample);
     T& operator [] (int pos);
+    T operator [] (int pos) const;
     virtual void print(){};
-    int len();
+    int len() const;
     void append(T sample);
     T pop();
     int index(T sample);
@@ -107,7 +109,13 @@ T& Base<T>::operator [] (int pos)
 }
 
 template <class T>
-int Base<T>::len()
+T Base<T>::operator [] (int pos) const
+{
+    return data[pos];
+}
+
+template <class T>
+int Base<T>::len() const
 {
     return pos;
 }
@@ -137,7 +145,8 @@ public:
     Base<T_String> right_header;
     Node(){}
     Node(const Node& sample);
-    void append_header(T_String sample);
+    void append_left_header(T_String sample);
+    void append_right_header(T_String sample);
     void print();
     Node& operator = (const Node& sample);
 };
