@@ -225,3 +225,29 @@ void Module::print()
     for(int i = 0; i<pos; i++)
         data[i].print();
 }
+
+//----------------------------------------------------------------------------------------------------------------------------------
+
+void Map::append(T_String key, T_String value)
+{
+    keys.append(key);
+    values.append(value);
+}
+
+void Map::print()
+{
+    for(int i = 0; i<keys.len(); i++)
+    {
+        cout<<keys[i]<<" - "<<values[i]<<endl;
+    }
+}
+
+T_String& Map::operator[](T_String key)
+{
+    for(int i=0;i<keys.len();i++)
+        if (!strcmp(keys[i], key))
+            return values[i];
+    throw T_String("Variables error ");
+}
+
+//----------------------------------------------------------------------------------------------------------------------------------

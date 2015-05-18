@@ -1,9 +1,12 @@
-bye : make.cpp Types.cpp hello tmp
-	echo "hello world!"
-	echo "hello world!!"
+var_hello = hello
+var_print = hello world
 
-hello : tmp
+bye : make.cpp Types.cpp hello tmp
+	echo "$(var_print)!"
+	echo "$(var_print)!!"
+
+$(var_hello) : tmp
 	echo "second"
 
 tmp :
-	echo "first"
+	echo "qwe $(var_hello) asd"

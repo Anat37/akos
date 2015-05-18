@@ -8,44 +8,6 @@
 
 using namespace std;
 
-T_String read_long_line(FILE* fp)
-{
-    int max_size = 1,
-        pos = 0;
-    char *tmp_str = (char*)malloc(sizeof(char)*max_size);
-    char tmp;
-
-    while(fread(&tmp,sizeof(char),1,fp))
-    {
-        if (pos == max_size)
-        {
-            max_size<<=1;
-            tmp_str = (char*)realloc(tmp_str,sizeof(char)*max_size);
-        }
-
-        if (tmp == '\n')
-            break;
-        if (tmp == '\r')
-            continue;
-        
-        tmp_str[pos] = tmp;
-        ++pos;
-    }
-
-    tmp_str = (char*)realloc(tmp_str,sizeof(char)*(pos+1));
-    tmp_str[pos] = '\0';
-
-    if (feof(fp)&&(pos == 0))
-    {
-        free(tmp_str);
-        tmp_str = (char*)NULL;
-    }
-    
-    T_String str(tmp_str);
-    free(tmp_str);
-    return str;
-}
-
 class Lexer
 {
 enum type_of_lex
@@ -53,17 +15,22 @@ enum type_of_lex
         LEX_NONE,
         LEX_H,
         LEX_LINE,
-        LEX_HEADER,
+        LEX_LEFT,
+        LEX_RIGHT_HEADER,
+        LEX_RIGHT_VAR,
+        LEX_VAR,
         LEX_END
-    } state;
-    int var_colon,
-    var_header;
+    } state, prev_state;
+    int var_header, var_left_bracket;
+    T_String var_key;
     Module mod;
-    Base<char> *buffer;
+    Map map;
+    Base<char> *buffer, *var_buffer;
     Base<int> collected, waiting;
     int c;
     FILE* f;
     int pos,line;
+    T_String* node_to_run;
     
     void get_c();
     int get_mod_index(T_String& vertex);
@@ -127,10 +94,12 @@ void Lexer::assemble(int current)
 
 Lexer::Lexer(int argc, char** argv)
 {
+    node_to_run = NULL;
     line = 1;
     pos = 0;
+    prev_state = LEX_NONE;
     state = LEX_NONE;
-    var_colon = 0;
+    var_left_bracket = 0;
     var_header = 0;
 
     switch(getopt(argc,argv,"f:"))
@@ -140,6 +109,12 @@ Lexer::Lexer(int argc, char** argv)
             break;
         default:
             f = fopen("tmp_makefile","r");
+    }
+    
+    if (optind<argc)
+    {
+        node_to_run = new T_String;
+        *node_to_run = T_String(argv[optind]);
     }
 }
 
@@ -173,41 +148,91 @@ void Lexer::load()
                         break;
 
                     default:
-                        mod.append(Node());
-                        ++pos;
                         buffer = new Base<char>;
-                        state = LEX_HEADER;
-                        var_colon = 0;
-                        var_header = 1;
+                        state = LEX_LEFT;
                         break;
                 }
                 break;
 
-            case LEX_HEADER:
+            case LEX_LEFT:
                 switch(c)
                 {
                     case ':':
-                        if (var_colon)
-                            throw T_String("Header error on line: ")+T_String(line);
-                        var_colon = 1;
+                        mod.append(Node());
+                        ++pos;
+                        var_header = 1;
                         mod[pos-1].append_left_header(T_String(*buffer));
                         delete buffer;
                         buffer = new Base<char>;
+                        state = LEX_RIGHT_HEADER;
+                        break;
+
+                    case '=':
+                        var_key = T_String(*buffer);
+                        delete buffer;
+                        buffer = new Base<char>;
+                        state = LEX_RIGHT_VAR;
+                        break;
+
+                    case '$':
+                        prev_state = LEX_LEFT;
+                        state = LEX_VAR;
                         break;
 
                     case '\n':
                     case -1:
-                        if (!var_colon)
-                        {
-                            throw T_String("Header error on line: ")+T_String(line);
-                        }
-                        else
-                        {
-                            mod[pos-1].append_right_header(T_String(*buffer));
-                            delete buffer;
-                            state = LEX_H;
-                            ++line;
-                        }
+                        throw T_String("Line type error on line: ")+T_String(line);
+                        break;
+
+                    default:
+                        if (isprint(c))
+                            buffer->append(c);                
+                        break;
+                }
+                get_c();
+                break;
+
+            case LEX_RIGHT_HEADER:
+                switch(c)
+                {
+                    case ':':
+                        throw T_String("Header error on line: ")+T_String(line);
+                        break;
+
+                    case '\n':
+                    case -1:
+                        mod[pos-1].append_right_header(T_String(*buffer));
+                        delete buffer;
+                        state = LEX_H;
+                        ++line;
+                        break;
+
+                    case '$':
+                        prev_state = LEX_RIGHT_HEADER;
+                        state = LEX_VAR;
+                        break;
+
+                    default:
+                        if (isprint(c))
+                            buffer->append(c);                
+                        break;
+                }
+                get_c();
+                break;
+
+            case LEX_RIGHT_VAR:
+                switch(c)
+                {
+                    case '=':
+                    throw T_String("Variable error on line: ")+T_String(line);
+                        break;
+
+                    case '\n':
+                    case -1:
+                        map.append(var_key.strip(), T_String(*buffer).strip());
+                        delete buffer;
+                        state = LEX_H;
+                        ++line;
                         break;
 
                     default:
@@ -231,6 +256,11 @@ void Lexer::load()
                         delete buffer;
                         break;
                     
+                    case '$':
+                        prev_state = LEX_LINE;
+                        state = LEX_VAR;
+                        break;
+
                     default:
                         if (isprint(c))
                             buffer->append(c);
@@ -239,22 +269,68 @@ void Lexer::load()
                 get_c();
                 break;
             
+            case LEX_VAR:
+                if ((c=='(')&&(!var_left_bracket))
+                {
+                    var_left_bracket = 1;
+                    var_buffer = new Base<char>;
+                    get_c();
+                    break;
+                }
+
+                switch(c)
+                {
+                    case '(':
+                        throw T_String("Brackets error on line: ")+T_String(line);
+                        break;
+
+                    case ')':
+                    {
+                        T_String ans = map[T_String(*var_buffer).strip()];
+                        
+                        int len = strlen(ans);
+                        for(int i = 0; i<len; i++)
+                            buffer->append(ans[i]);
+                        
+                        delete var_buffer;
+                        var_left_bracket = 0;
+                        state = prev_state;
+                        break;
+                    }
+
+                    default:
+                        if (isprint(c))
+                            var_buffer->append(c);
+                        break;
+                }
+                get_c();
+                break;
+
             case LEX_END:
-                exit(1);
+                exit(1); // в теории сюда дойти нельзя
         }
     }while(state != LEX_END);
 }
 
 void Lexer::print()
 {
+    cout<<"--Start--"<<endl;
+    cout<<"--Modules--"<<endl;
     mod.print();
+
+    cout<<"--Dictionary--"<<endl;
+    map.print();
+    cout<<"--End--"<<endl;
 }
 
 void Lexer::collect()
 {
     try
     {
-        assemble(0);
+        if (node_to_run)
+            assemble(get_mod_index(*node_to_run));
+        else
+            assemble(0);
     }
     catch (const char* e)
     {
@@ -265,6 +341,7 @@ void Lexer::collect()
 Lexer::~Lexer()
 {
     fclose(f);
+    delete node_to_run;
 }
 
 int main(int argc, char** argv)
@@ -272,9 +349,10 @@ int main(int argc, char** argv)
     Lexer lex(argc, argv);
     try
     {
-        lex.load();
+        lex.load();    
+        lex.print();
+        cout<<endl;
         lex.collect();
-    //    lex.print();
     }
     catch( T_String e)
     {
