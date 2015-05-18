@@ -10,7 +10,7 @@ using namespace std;
 
 class Lexer
 {
-enum type_of_lex
+    enum type_of_lex
     {
         LEX_NONE,
         LEX_H,
@@ -181,6 +181,7 @@ void Lexer::load()
 
                     case '\n':
                     case -1:
+                        delete buffer;
                         throw T_String("Line type error on line: ")+T_String(line);
                         break;
 
@@ -196,6 +197,7 @@ void Lexer::load()
                 switch(c)
                 {
                     case ':':
+                        delete buffer;
                         throw T_String("Header error on line: ")+T_String(line);
                         break;
 
@@ -205,6 +207,11 @@ void Lexer::load()
                         delete buffer;
                         state = LEX_H;
                         ++line;
+                        break;
+
+                    case '=':
+                        delete buffer;
+                        throw T_String("Line type error on line: ")+T_String(line);
                         break;
 
                     case '$':
@@ -224,9 +231,15 @@ void Lexer::load()
                 switch(c)
                 {
                     case '=':
-                    throw T_String("Variable error on line: ")+T_String(line);
+                        delete buffer;
+                        throw T_String("Variable error on line: ")+T_String(line);
                         break;
 
+                    case ':':
+                        delete buffer;
+                        throw T_String("Line type error on line: ")+T_String(line);
+                        break;
+                        
                     case '\n':
                     case -1:
                         map.append(var_key.strip(), T_String(*buffer).strip());
@@ -245,7 +258,10 @@ void Lexer::load()
 
             case LEX_LINE:
                 if (!var_header)
+                {
+                    delete buffer;
                     throw T_String("Header error on line: ")+T_String(line);
+                }
                 switch(c)
                 {
                     case '\n':
@@ -281,12 +297,24 @@ void Lexer::load()
                 switch(c)
                 {
                     case '(':
+                        delete buffer;
+                        delete var_buffer;
                         throw T_String("Brackets error on line: ")+T_String(line);
                         break;
 
                     case ')':
                     {
-                        T_String ans = map[T_String(*var_buffer).strip()];
+                        T_String ans;
+                        try
+                        {
+                            ans = map[T_String(*var_buffer).strip()];
+                        }
+                        catch(T_String e)
+                        {
+                            delete buffer;
+                            delete var_buffer;
+                            throw e+T_String("on line: ")+T_String(line);
+                        }
                         
                         int len = strlen(ans);
                         for(int i = 0; i<len; i++)
@@ -297,6 +325,12 @@ void Lexer::load()
                         state = prev_state;
                         break;
                     }
+
+                    case '\n':
+                    case -1:
+                        delete buffer;
+                        delete var_buffer;
+                        throw T_String("Brackets error on line: ")+T_String(line);
 
                     default:
                         if (isprint(c))
