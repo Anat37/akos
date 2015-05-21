@@ -8,26 +8,6 @@ using namespace std;
 template <class T>
 class Base;
 
-class T_String{
-    char *data;
-public:
-    T_String();
-    T_String(const char* sample);
-    T_String(const char sample);
-    T_String(const int sample);
-    T_String(const T_String& sample);
-    T_String(const Base<char>& sample);
-    ~T_String();
-    operator char *();
-    T_String& operator = (const T_String& sample);
-    T_String operator + (const T_String& sample);
-    T_String slice(int from, int to);
-    int index(char sample);
-    T_String strip();
-    int empty();
-    Base<T_String> split();
-};
-
 //----------------------------------------------------------------------------------------------------------------------------------
 
 template <class T>
@@ -138,15 +118,17 @@ int Base<T>::index(T sample)
 
 //----------------------------------------------------------------------------------------------------------------------------------
 
-class Node: public Base< T_String >
+class Node: public Base< string >
 {
+    Base<string> split(string sample);
+    string strip(string sample);
 public:
-    T_String left_header;
-    Base<T_String> right_header;
+    string left_header;
+    Base<string> right_header;
     Node(){}
     Node(const Node& sample);
-    void append_left_header(T_String sample);
-    void append_right_header(T_String sample);
+    void append_left_header(string sample);
+    void append_right_header(Base<string> sample);
     void print();
     Node& operator = (const Node& sample);
 };
@@ -163,11 +145,11 @@ public:
 
 class Map
 {
-    Base<T_String> keys, values;
+    Base<string> keys, values;
 public:
-    void append(T_String key, T_String value);
+    void append(string key, string value);
     void print();
-    T_String& operator[](T_String key);
+    string& operator[](string key);
 };
 
 //----------------------------------------------------------------------------------------------------------------------------------
