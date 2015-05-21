@@ -76,9 +76,8 @@ Base<string> Parser::split(string sample)
 
 string Parser::strip(string sample)
 {
-    string tmp(sample);
+    string tmp;
     int i = 0, 
-    pos = 0,
     space = 0;
 
     while((sample[i] == ' ')||(sample[i] == '\t'))
@@ -91,18 +90,15 @@ string Parser::strip(string sample)
             space = 1;
         }else
         {
-            if (space)
+            if(space)
             {
-                tmp[pos] = ' ';
-                ++pos;
+                tmp.push_back(' ');
                 space = 0;
             }
-            tmp[pos] = sample[i];
-            ++pos;
+            tmp.push_back(sample[i]);
         }
         ++i;
     }
-    tmp[pos] = '\0';
     return tmp;
 }
 
@@ -122,8 +118,10 @@ int Parser::is_file(string& filename)
 int Parser::get_mod_index(string& vertex)
 {
     for(int i=0; i<mod.len(); i++)
+    {
         if (!mod[i].left_header.compare(vertex))
             return i;
+    }
     cout<<"there no vertex: "<<vertex<<endl;
     throw "index error";
     return -1;
@@ -498,12 +496,12 @@ int main(int argc, char** argv)
     Parser lex(argc, argv);
     try
     {
-        lex.load();    
+        lex.load();
         lex.print();
         cout<<endl;
         lex.collect();
     }
-    catch( string e)
+    catch(string e)
     {
         cout<< e << endl;
     }

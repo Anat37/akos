@@ -3,12 +3,12 @@ var_print=hello world #asda
 
 #adsad
 
-bye:make.cpp Types.cpp hello tmp #sdasda
-	echo "$(var_hello)!"#hqweqw
-	echo "$(var_hello)!!"#wasm
+bye : make.cpp Types.cpp $(var_hello) tmp #sdasda
+	echo "hello!"#hqweqw
+	echo "hello!!"#wasm
 
-$(var_hello):tmp
+$(var_hello) : tmp
 	echo "second"
 
-tmp:
-	echo "qwe $(var_hello) asd"
+tmp :
+	echo "first $(var_hello)"

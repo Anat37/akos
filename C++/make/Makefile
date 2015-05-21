@@ -1,4 +1,4 @@
-GPPFLAGS=-Wall -ansi -pedantic
+GPPFLAGS = -Wall -ansi -pedantic
 
 all: compile
 
