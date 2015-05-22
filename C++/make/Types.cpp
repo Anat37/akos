@@ -54,7 +54,7 @@ void Module::print()
 {
     for(int i = 0; i<data.size(); i++)
     {
-        cout<<"Module №"<<i<<':'<<endl;
+        cout<<"Module №"<<i+1<<':'<<endl;
         data[i].print();
         cout<<endl;
     }
@@ -237,12 +237,19 @@ void Parser::load()
             case LEX_NONE:
                 get_c();
                 state = LEX_H;
+                if (debug)
+                    cout<<"\t<DEBUG START>"<<endl;
+                break;
 
             case LEX_H:
                 switch(c)
                 {
                     case -1:
                         state = LEX_END;
+                        if (debug)
+                        {
+                            cout<<"\t<DEBUG END>"<<endl;
+                        }
                         break;
 
                     case '\n':
@@ -250,20 +257,36 @@ void Parser::load()
                         ++line;
                         var_header = 0;
                         get_c();
+                        if (debug)
+                        {
+                            cout<<"<EMPTY>"<<endl;
+                        }
                         break;
 
                     case '#':
                         state = LEX_COMMENT;
                         get_c();
+                        if (debug)
+                        {
+                            cout<<"<COMMENT>#";
+                        }
                         break;
 
                     case '\t':
                         state = LEX_LINE;
                         get_c();
+                        if (debug)
+                        {
+                            cout<<"<LINE>";
+                        }
                         break;
 
                     default:
                         state = LEX_LEFT;
+                        if (debug)
+                        {
+                            cout<<"<LEFT>";
+                        }
                         break;
                 }
                 break;
@@ -277,8 +300,11 @@ void Parser::load()
                         var_header = 1;
                         mod[pos-1].append_left_header(strip(buffer));
                         buffer.clear();
-                        
                         state = LEX_RIGHT_HEADER;
+                        if (debug)
+                        {
+                            cout<<"</LEFT><COLON>"<<(char)c<<"</COLON><RIGHT PART OF HEADER>";
+                        }
                         break;
 
                     case '#':
@@ -289,13 +315,20 @@ void Parser::load()
                     case '=':
                         var_key = strip(buffer);
                         buffer.clear();
-                        
                         state = LEX_RIGHT_VAR;
+                        if (debug)
+                        {
+                            cout<<"</LEFT><EQUALITY>"<<(char)c<<"</EQUALITY><RIGHT PART OF VARIABLE>";
+                        }
                         break;
 
                     case '$':
                         prev_state = LEX_LEFT;
                         state = LEX_VAR;
+                        if (debug)
+                        {
+                            cout<<"<VARIABLE>"<<(char)c;
+                        }
                         break;
 
                     case '\n':
@@ -307,6 +340,10 @@ void Parser::load()
                     default:
                         if (isprint(c))
                             buffer.push_back(c);                
+                        if (debug)
+                        {
+                            cout<<(char)c;
+                        }
                         break;
                 }
                 get_c();
@@ -327,12 +364,20 @@ void Parser::load()
                         mod[pos-1].append_right_header(split(strip(buffer)));
                         buffer.clear();
                         state = LEX_H;
+                        if (debug)
+                        {
+                            cout<<"</RIGHT PART OF HEADER>"<<endl;
+                        }
                         break;
 
                     case '#':
                         mod[pos-1].append_right_header(split(strip(buffer)));
                         buffer.clear();
                         state = LEX_COMMENT;
+                        if (debug)
+                        {
+                            cout<<"<COMMENT>#";
+                        }
                         break;
 
                     case '=':
@@ -343,11 +388,19 @@ void Parser::load()
                     case '$':
                         prev_state = LEX_RIGHT_HEADER;
                         state = LEX_VAR;
+                        if (debug)
+                        {
+                            cout<<"<VARIABLE>"<<(char)c;
+                        }
                         break;
 
                     default:
                         if (isprint(c))
                             buffer.push_back(c);                
+                        if (debug)
+                        {
+                            cout<<(char)c;
+                        }
                         break;
                 }
                 get_c();
@@ -373,17 +426,29 @@ void Parser::load()
                         dict[var_key] = strip(buffer);
                         buffer.clear();
                         state = LEX_H;
+                        if (debug)
+                        {
+                            cout<<"</VARIABLE>"<<endl;
+                        }
                         break;
 
                     case '#':
                         dict[var_key] = strip(buffer);
                         buffer.clear();
                         state = LEX_COMMENT;
+                        if (debug)
+                        {
+                            cout<<"<COMMENT>#";
+                        }
                         break;
 
                     default:
                         if (isprint(c))
                             buffer.push_back(c);                
+                        if (debug)
+                        {
+                            cout<<(char)c;
+                        }
                         break;
                 }
                 get_c();
@@ -404,22 +469,38 @@ void Parser::load()
                         mod[pos-1].append(strip(buffer));
                         buffer.clear();
                         state = LEX_H;
+                        if (debug)
+                        {
+                            cout<<"</LINE>"<<endl;
+                        }
                         break;
                     
                     case '$':
                         prev_state = LEX_LINE;
                         state = LEX_VAR;
+                        if (debug)
+                        {
+                            cout<<"<VARIABLE>";
+                        }
                         break;
 
                     case '#':
                         mod[pos-1].append(strip(buffer));
                         buffer.clear();
                         state = LEX_COMMENT;
+                        if (debug)
+                        {
+                            cout<<"<COMMENT#";
+                        }
                         break;
 
                     default:
                         if (isprint(c))
                             buffer.push_back(c);
+                        if (debug)
+                        {
+                            cout<<(char)c;
+                        }
                         break;
                 }
                 get_c();
@@ -429,9 +510,14 @@ void Parser::load()
                 if ((c=='(')&&(!var_left_bracket))
                 {
                     var_left_bracket = 1;
+                    if (debug)
+                    {
+                        cout<<(char)c;
+                    }
                     get_c();
                     break;
                 }
+                
                 switch(c)
                 {
                     case '(':
@@ -445,7 +531,7 @@ void Parser::load()
                         string ans;
                         try
                         {
-                            ans = dict[ string(var_buffer) ];
+                            ans = dict[ var_buffer ];
                         }
                         catch(string e)
                         {
@@ -461,6 +547,10 @@ void Parser::load()
                         var_buffer.clear();
                         var_left_bracket = 0;
                         state = prev_state;
+                        if (debug)
+                        {
+                            cout<<")</VARIABLE>";
+                        }
                         break;
                     }
 
@@ -478,6 +568,10 @@ void Parser::load()
                     default:
                         if (isprint(c))
                             var_buffer.push_back(c);
+                        if (debug)
+                        {
+                            cout<<(char)c;
+                        }
                         break;
                 }
                 get_c();
@@ -491,7 +585,15 @@ void Parser::load()
                         column = 0;
                         ++line;
                         state = LEX_H;
+                        if (debug)
+                        {
+                            cout<<"</COMMENT>";
+                        }
                         break;
+                }
+                if (debug)
+                {
+                    cout<<(char)c;
                 }
                 get_c();
                 break;

@@ -4,8 +4,8 @@ var_print=hello world #asda
 #adsad
 
 bye : make.cpp Types.cpp $(var_hello) tmp #sdasda
-	echo "hello!"#hqweqw
-	echo "hello!!"#wasm
+	echo "hello!" #hqweqw
+	echo "hello!!"  #wasm
 
 $(var_hello) : tmp
 	echo "second"
