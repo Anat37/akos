@@ -1,14 +1,14 @@
-var_hello=hello
-var_print=hello world #asda
 
 #adsad
 
-bye : make.cpp Types.cpp $(var_hello) tmp #sdasda
+include guns
+
+bye : make.cpp Types.cpp $(var_hello) tmp asd.o #sdasda
 	echo "hello!" #hqweqw
 	echo "hello!!"  #wasm
 
+%.o:
+	echo "regexp"
+
 $(var_hello) : tmp
 	echo "second"
-
-tmp :
-	echo "first $(var_hello)"

@@ -72,6 +72,24 @@ Node& Module::operator [](const int pos)
 
 //----------------------------------------------------------------------------------------------------------------------------------
 
+int Parser::compare(string f, string s)
+{
+    if (regex_match(f, regex("%\.[[:alpha:]]+")))
+    {
+        if (regex_match(s, regex(f.replace(f.find('%'),1,"[[:alpha:]]+").c_str())))
+        {
+            return 0;
+        }
+        else 
+        {
+            return 1;
+        }
+    }
+    else
+    {
+        return f.compare(s);
+    }
+}
 
 vector<string> Parser::split(string sample)
 {
@@ -139,7 +157,7 @@ int Parser::get_mod_index(string& vertex)
 {
     for(int i=0; i<mod.data.size(); i++)
     {
-        if (!mod[i].left_header.compare(vertex))
+        if (!compare(mod[i].left_header, vertex))
             return i;
     }
     throw string("Graph error, there are no vertext: ")+vertex;
@@ -163,6 +181,7 @@ int Parser::is_file(string& filename)
 void Parser::assemble(int current)
 {
     int index;
+
     for(int i = 0; i<mod[current].right_header.size(); i++)
     {
         if (get_index(waiting, current) != -1)
@@ -181,26 +200,29 @@ void Parser::assemble(int current)
     }
 
     collected.push_back(current);
-    
+
     for(int i = 0; i < mod[current].data.size(); i++)
     {
-        cout<<mod[current][i].c_str()<<endl;
-        if (system(mod[current][i].c_str())!=0)
-           throw string("Execution error on module ")+itoa(current)+string(" on line ")+itoa(i+1);
+        execution.push_back(mod[current][i]);
+    }
+
+    if (waiting.empty())
+    {
+        while(!execution.empty())
+        {
+            cout<<execution.front()<<endl;
+            if (system(execution.front().c_str())!=0)
+               throw string("Execution error on module ")+itoa(current);
+            execution.pop_front();
+        }
     }
 }
 
 Parser::Parser(int argc, char** argv)
 {
-    line = 1;
     pos = 0;
     debug = 0;
-    prev_state = LEX_NONE;
-    state = LEX_NONE;
-    var_left_bracket = 0;
-    var_header = 0;
-
-    f = fopen("tmp_makefile","r");
+    f = fopen("tmp_makefile", "r");
 
     switch(getopt(argc,argv,"df:"))
     {
@@ -228,8 +250,38 @@ Parser::Parser(int argc, char** argv)
     }
 }
 
-void Parser::load()
+Parser::~Parser()
 {
+    fclose(f);
+}
+
+void Parser::load(int included, string filename)
+{
+    for(int i = 0; i<files.size(); i++)
+    {
+        if (files[i]==filename)
+            throw string("File queue error");
+    }
+    files.push_back(filename);
+    int line = 1;
+    buffer.clear();
+    state = LEX_NONE;
+    prev_state = LEX_NONE;
+    var_left_bracket = 0;
+    var_header = 0;
+
+    FILE* tmp_f;
+    if (!filename.empty())
+    {
+        tmp_f = f;
+        f = fopen(filename.c_str(), "r");
+        if (f == NULL)
+        {
+            cout<<"there is some file error"<<endl;
+            exit(1);
+        }
+    }
+
     do
     {
         switch(state)
@@ -299,6 +351,8 @@ void Parser::load()
                         ++pos;
                         var_header = 1;
                         mod[pos-1].append_left_header(strip(buffer));
+                        if ((node_to_run.empty())&&(!included))
+                            node_to_run = strip(buffer);
                         buffer.clear();
                         state = LEX_RIGHT_HEADER;
                         if (debug)
@@ -336,6 +390,28 @@ void Parser::load()
                         buffer.clear();
                         throw string("Line type error on: (")+itoa(line)+string(",")+itoa(column)+string(")");
                         break;
+
+
+                    case ' ':
+                        if (!buffer.compare("include"))
+                        {
+                            state = LEX_INCLUDE;
+                            buffer.clear();
+                            if (debug)
+                            {
+                                cout<<"</LEFT> <FILENAME>";
+                            }
+                            break;
+                        }
+                        else
+                        {
+                            if (isprint(c))
+                                buffer.push_back(c);                
+                            if (debug)
+                            {
+                                cout<<(char)c;
+                            }
+                        }
 
                     default:
                         if (isprint(c))
@@ -460,6 +536,7 @@ void Parser::load()
                     buffer.clear();
                     throw string("Header error on: (")+itoa(line)+string(",")+itoa(column)+string(")");
                 }
+
                 switch(c)
                 {
                     case '\n':
@@ -490,7 +567,7 @@ void Parser::load()
                         state = LEX_COMMENT;
                         if (debug)
                         {
-                            cout<<"<COMMENT#";
+                            cout<<"<COMMENT>#";
                         }
                         break;
 
@@ -531,7 +608,7 @@ void Parser::load()
                         string ans;
                         try
                         {
-                            ans = dict[ var_buffer ];
+                            ans = dict[var_buffer];
                         }
                         catch(string e)
                         {
@@ -600,8 +677,49 @@ void Parser::load()
 
             case LEX_END:
                 exit(1); // в теории сюда дойти нельзя
+
+            case LEX_INCLUDE:
+                switch(c)
+                {
+                    case '\n':
+                    {
+                        if (debug)
+                        {
+                            cout<<"</FILENAME>"<<endl;
+                        }
+                        string tmp(buffer);
+                        try
+                        {
+                            load(1, buffer);
+                        }
+                        catch(string e)
+                        {
+                            throw e+string(" in file \"")+tmp+string("\"");
+                        }
+                        state = LEX_H;
+                        break;
+                    }
+
+                    default:
+                        if (isprint(c))
+                            buffer.push_back(c);
+                        if (debug)
+                        {
+                            cout<<(char)c;
+                        }
+                        break;
+                }
+                get_c();
+                break;
+
         }
     }while(state != LEX_END);
+
+    if (!filename.empty())
+    {
+        fclose(f);
+        f = tmp_f;
+    }
 }
 
 void Parser::print()
@@ -622,9 +740,4 @@ void Parser::collect()
         assemble(get_mod_index(node_to_run));
     else
         assemble(0);
-}
-
-Parser::~Parser()
-{
-    fclose(f);
 }

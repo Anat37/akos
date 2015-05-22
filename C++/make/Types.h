@@ -8,6 +8,8 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <regex>
+#include <list>
 
 using namespace std;
 
@@ -55,6 +57,7 @@ class Parser
         LEX_RIGHT_VAR,
         LEX_COMMENT,
         LEX_VAR,
+        LEX_INCLUDE,
         LEX_END
     } state, prev_state;
     int var_header, var_left_bracket;
@@ -66,12 +69,14 @@ class Parser
     map<string,string> dict;
     string buffer, var_buffer;
     vector<int> collected, waiting;
+    vector<string> files;
+    list<string> execution;
     
     int c;
     FILE* f;
     int pos,
-        line,
         column;
+    
     string node_to_run;
     
     void get_c();
@@ -80,6 +85,7 @@ class Parser
     void assemble(int current);
     int is_file(string& filename);
     int get_index(vector<int> sample, int key);
+    int compare(string f, string s);
 
     string strip(string sample);
     vector<string> split(string sample);
@@ -87,7 +93,7 @@ class Parser
     string itoa(int number);
 public:
     Parser(int argc, char** argv);
-    void load(); //
+    void load(int included = 0, string filename = string()); //
     void print();
     void collect();
     ~Parser();
