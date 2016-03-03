@@ -7,7 +7,7 @@
 	int i = 0;                                   \
 	for (i; i < sizeof(X) * 8; ++i)              \
 	{                                            \
-		putchar(((X >> i) % 2) + 48);        \
+		putchar(((X >> i) & 1) + '0');       \
 	}                                            \
 }                                                    
 
