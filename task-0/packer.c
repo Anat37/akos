@@ -10,7 +10,7 @@
 		putchar(((X >> i) & 1) + '0');       \
 	}                                            \
 }                                                    
-/* comm */
+
 int packer(const char* obj, unsigned int** result)
 {
 	unsigned int buf = 0;
