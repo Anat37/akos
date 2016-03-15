@@ -1,6 +1,7 @@
 #include<stdio.h>
 #include<string.h>
 #include<stdlib.h>
+#include<ctype.h>
 
 int safe_gets(FILE* f,char** res)
 {
@@ -32,6 +33,66 @@ int safe_gets(FILE* f,char** res)
 
 int unpacker(FILE *inf, FILE *outf)
 {
+  int err;
+  char *str;
+  unsigned int buf;
+  int flag;
+  int pos, groupw, writen;
+  size_t read;
+  while(!feof(inf))
+  { 
+    groupw = 0;
+    writen = 0;
+    err = safe_gets(inf, &str);
+    if (err != 0)
+        return err;
+    if (str[0] != '>' )
+        return 4;
+    fputs(str, outf);
+    flag = 1;
+    while(flag)
+    {
+      read = fread(&buf, sizeof(int), 1, inf);
+      printf("%d\n", buf);
+      pos = 0;
+      while (pos <= (sizeof(int) *  8) - 3)
+      { 
+        switch ((buf >> pos) & 7)
+        {
+          case 1: fputc('a',outf);
+                  break;
+          case 2: fputc('t',outf);
+                  break; 
+          case 3: fputc('g',outf);
+                  break;
+          case 4: fputc('c',outf);
+                  break;
+          case 5: fputc('u',outf);
+                  break;
+          case 0: fputc('\n',outf);
+                  pos = sizeof(int) * 8;
+                  flag = 0;
+                  continue;
+                  break;
+        }
+        pos += 3;
+        ++writen;
+        if (writen == 10)
+        {
+          ++groupw;
+          if (groupw == 6)
+          {
+              fputc('\n',outf);
+              groupw = 0;
+          }
+          else 
+              fputc(' ',outf);
+          writen = 0;
+        }
+      }
+    }
+    fgetc(inf);
+  }
 }
 
 int packer(FILE *inf, FILE *outf)
@@ -68,6 +129,7 @@ int packer(FILE *inf, FILE *outf)
       fputs(str, outf);
       continue;
     }
+    c = tolower(c);
     switch(c)
     {
       case 'a' :buf += 1 << pos;
@@ -86,7 +148,7 @@ int packer(FILE *inf, FILE *outf)
 		pos += 3;
                 break;
     }
-    if (pos >= (sizeof(int) * 8))
+    if (pos > (sizeof(int) * 8) - 3)
     {
       fwrite((const void* ) &buf, sizeof(int), 1, outf);
       pos = 0;
@@ -119,13 +181,14 @@ int main(int argc, char *argv[])
   } 
   if (argv[1][3] == 'k')
   {
-      printf("packingg\n");
+      printf("packing\n");
       return packer(fin, fout);
   }
   else 
   {
       printf("unpacking\n");
-      return unpacker(fin, fout);
+      printf("%d\n", unpacker(fin, fout));
+      return 0;
   }
       return 0;
 }
