@@ -9,4 +9,4 @@ dna_packer.o: dna_packer.c
 	$(CC) $(CFLAGS) dna_packer.c
 
 clean:
-	rm -rf *.o 
+	rm -rf *.o packer 
