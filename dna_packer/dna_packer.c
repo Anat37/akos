@@ -12,6 +12,8 @@ int safe_gets(FILE* f,char** res)
   int size = 1;
   char* buf;
   buf = malloc(110);
+  if (*res != NULL)
+      free(*res);
   *res = malloc(1);
   char* ptr; 
   do
@@ -28,6 +30,7 @@ int safe_gets(FILE* f,char** res)
     strcpy(*res + size - 1, buf); 
     size += 99;
   } while (!feof(f) && strlen(buf) == 99);
+  free(buf);
   return 0;
 }
 
