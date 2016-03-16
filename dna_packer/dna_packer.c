@@ -93,6 +93,7 @@ int unpacker(FILE *inf, FILE *outf)
     }
     fgetc(inf);
   }
+  free(str);
 }
 
 int packer(FILE *inf, FILE *outf)
@@ -156,6 +157,7 @@ int packer(FILE *inf, FILE *outf)
     }
   }
   fwrite((const void* ) &buf, sizeof(int), 1, outf);
+  free(str);
   printf("packed\n");
 }
 
@@ -186,9 +188,12 @@ int main(int argc, char *argv[])
   }
   else 
   {
+      close(fin);
       printf("unpacking\n");
       printf("%d\n", unpacker(fin, fout));
       return 0;
   }
+      close(fin);
+      close(fout);
       return 0;
 }
