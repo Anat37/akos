@@ -2,7 +2,7 @@ CC = gcc
 
 CFLAGS = -g -ansi -pedantic -w
 
-SOURCES = safe_gets.c 
+SOURCES = safe_gets.c signals.c 
 
 PROGRAMS = $(SOURCES:.c= ) 
 
