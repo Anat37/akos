@@ -10,12 +10,12 @@ int safe_gets(FILE* f,char** res)
   if (feof(f))
     return 1; 
   int size = 1;
-  char* buf;
+  char* buf = NULL;
   buf = malloc(110);
   if (*res != NULL)
       free(*res);
   *res = malloc(1);
-  char* ptr; 
+  char* ptr = NULL; 
   do
   {
     if (fgets(buf, 100, f) == NULL)
@@ -56,7 +56,6 @@ int unpacker(FILE *inf, FILE *outf)
     while(flag)
     {
       read = fread(&buf, sizeof(int), 1, inf);
-      printf("%d\n", buf);
       pos = 0;
       while (pos <= (sizeof(int) *  8) - 3)
       { 
@@ -97,6 +96,9 @@ int unpacker(FILE *inf, FILE *outf)
     fgetc(inf);
   }
   free(str);
+  fclose(inf);
+  fclose(outf);
+  printf("unpacked\n");
 }
 
 int packer(FILE *inf, FILE *outf)
@@ -105,7 +107,7 @@ int packer(FILE *inf, FILE *outf)
   int pos = 0;
   int err;
   char c;
-  char* str;
+  char* str = NULL;
   c = fgetc(inf);
   if (c == '>') 
   {
@@ -161,6 +163,8 @@ int packer(FILE *inf, FILE *outf)
   }
   fwrite((const void* ) &buf, sizeof(int), 1, outf);
   free(str);
+  fclose(inf);
+  fclose(outf);
   printf("packed\n");
 }
 
@@ -181,6 +185,7 @@ int main(int argc, char *argv[])
   FILE *fout = fopen(argv[3], "w");
   if (fout == NULL)
   {
+     fclose(fin);
      printf("Error opening output file");
      return 0;
   } 
@@ -191,12 +196,10 @@ int main(int argc, char *argv[])
   }
   else 
   {
-      close(fin);
       printf("unpacking\n");
-      printf("%d\n", unpacker(fin, fout));
-      return 0;
+      return unpacker(fin, fout);
   }
-      close(fin);
-      close(fout);
+      fclose(fin);
+      fclose(fout);
       return 0;
 }
