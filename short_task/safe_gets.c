@@ -10,16 +10,16 @@ int safe_gets(FILE* f,char** res)
     return 1; 
   int size = 1;
   char* buf;
-  buf = malloc(110);
+  buf = malloc(110 * sizeof(char));
   if (*res != NULL)
       free(*res);
-  *res = malloc(1);
+  *res = malloc(sizeof(char));
   char* ptr; 
   do
   {
     if (fgets(buf, 100, f) == NULL)
       return 2;
-    ptr = realloc(*res, size + 99);
+    ptr = realloc(*res, (size + 99) * sizeof(char));
     if (ptr == NULL)
     {
       free(*res);
@@ -29,10 +29,5 @@ int safe_gets(FILE* f,char** res)
     strcpy(*res + size - 1, buf); 
     size += 99;
   } while (!feof(f) && strlen(buf) == 99);
-  return 0;
-}
-
-int main()
-{
   return 0;
 }
