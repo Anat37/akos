@@ -18,16 +18,22 @@ int safe_gets(FILE* f,char** res)
   do
   {
     if (fgets(buf, 100, f) == NULL)
+    {
+      free(buf);
+      free(*res);
       return 2;
+    }
     ptr = realloc(*res, (size + 99) * sizeof(char));
     if (ptr == NULL)
     {
       free(*res);
+      free(buf);
       return 3;
     }
     *res = ptr;
     strcpy(*res + size - 1, buf); 
     size += 99;
   } while (!feof(f) && strlen(buf) == 99);
+  free(buf);
   return 0;
 }
