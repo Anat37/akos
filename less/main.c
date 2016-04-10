@@ -22,6 +22,8 @@ int height = 0;
 int width = 0;
 size_t max_len = 0;
 
+void reprint();
+
 int handler(int sig)
 {
 	if (sig == SIGWINCH)
@@ -161,7 +163,9 @@ int get_term_size()
         	return 1;
     	}
 
-    	width = ws.ws_col - 1;
+    	width = ws.ws_col;
+    	if (number_switch)
+    		--width;
     	height =  ws.ws_row;
 	close(fd);
 	return 0;
@@ -298,10 +302,10 @@ void reprint()
 	
 	for (i = up; i < down; ++i)
 	{	
-		if (from == 0)
+		if (from == 0 && number_switch)
 			printf("|");
 			else
-			printf(">");
+			printf("<");
 		if (number_switch)
 		{	
 			int k = num_len(i);

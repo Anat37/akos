@@ -4,17 +4,17 @@
 
 int safe_gets(FILE* f,char** res)
 {
+  int size = 1;
+  char* buf;
+  char* ptr; 
   if (f == NULL)
     return 1;
   if (feof(f))
     return 1; 
-  int size = 1;
-  char* buf;
   buf = malloc(110 * sizeof(char));
   if (*res != NULL)
       free(*res);
   *res = malloc(sizeof(char));
-  char* ptr; 
   do
   {
     if (fgets(buf, 100, f) == NULL)

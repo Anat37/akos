@@ -1,0 +1,17 @@
+Lesss is a programme to show content of file.
+
+To run programme input 
+./lesss filename
+
+There are few avalaible option to run programme
+
+    -n : Shows string number at the left side of the screen.
+         ./lesss -n filename
+        or
+         ./lesss filename -n
+        or if you want 
+         ./lesss -n -n filename -n -nnnnnnnnn
+
+To stop programme input q.
+
+To move through file use keys up, down, left, right.
