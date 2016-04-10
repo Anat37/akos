@@ -302,10 +302,13 @@ void reprint()
 	
 	for (i = up; i < down; ++i)
 	{	
-		if (from == 0 && number_switch)
-			printf("|");
-			else
-			printf("<");
+		if (number_switch)
+		{
+			if (from == 0)
+				printf("|");
+				else
+				printf("<");
+		}
 		if (number_switch)
 		{	
 			int k = num_len(i);
