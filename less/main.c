@@ -12,15 +12,14 @@
 #include <string.h>
 
 static struct termios stored_settings;
-short number_switch = 0;
-short double_size = 0;
-char** data = NULL;
-int strcount = 0;
-int posx = 0;
-int posy = 0;
-int height = 0;
-int width = 0;
-size_t max_len = 0;
+volatile short number_switch = 0;
+volatile char** data = NULL;
+volatile int strcount = 0;
+volatile int posx = 0;
+volatile int posy = 0;
+volatile int height = 0;
+volatile int width = 0;
+volatile size_t max_len = 0;
 
 void reprint();
 
@@ -56,8 +55,6 @@ void to_canonical()
 	return;
 }
 
-
-
 int options(int argc, char* argv[])
 {
 	char *opts = "n";
@@ -70,38 +67,6 @@ int options(int argc, char* argv[])
         	number_switch = 1;	
         }
         return ind;	
-}
-
-int get_loc(char* filename)
-{
-	pid_t pid;
-	int pipe1[2];
-	char str[100];
-	int status;
-	
-	if (pipe(pipe1))
-	{
-		perror("Pipe create");
-		return -1;
-	}
-	pid = fork();
-	if (pid == -1)
-	{
-		perror("Fork");
-		return -1;
-	}
-	if (pid == 0)
-	{
-		close(pipe1[0]);
-		dup2(pipe1[1], 1);
-		execlp("file", "file", "-bi", filename, NULL);
-		return -1;
-	}
-	read(pipe1[0], &str, 100);
-	close(pipe1[0]);
-	close(pipe1[1]);
-	waitpid(pid, &status, 0);
-	return 0;
 }
 
 int scan(FILE* file)
@@ -256,7 +221,13 @@ int write_n(size_t from, size_t to, char* str)
 			}
 		} else
 		{
-			printf("%c", *str);
+			if (*str == 9)
+			{
+				printf("    ");
+				cnt+=3;
+			}
+			else
+				printf("%c", *str);
 			++str;
 		}
 	}
@@ -347,7 +318,9 @@ int mystrlen(const char* str)
 				str += 2;	
 			}
 		} else
-		{
+		{	
+			if (*str == 9)
+				cnt+=3;
 			++str;
 		}
 		++cnt;
@@ -387,7 +360,6 @@ int main(int argc, char* argv[])
 	}
 	
 	signal(SIGWINCH, &handler);
-	setvbuf(stdout, NULL, _IONBF, 0);
 	to_noncanonical();
 	if (scan(file) == -1)
 		return -1;
@@ -399,7 +371,7 @@ int main(int argc, char* argv[])
 	symbol[2] = 0;
 	while((symbol[2]=getchar())!=EOF)
     	{
-    	        if (symbol[0] == 27 && symbol[1] == 91 && symbol[2] == 65)
+    		if (symbol[0] == 27 && symbol[1] == 91 && symbol[2] == 65)
     	        {
     	        	if (posy > 0)
     	        		--posy;
@@ -428,7 +400,7 @@ int main(int argc, char* argv[])
         	if (symbol[2] == '\004')
         		break;
     		symbol[0] = symbol[1];
-    	        symbol[1] = symbol[2];
+    		symbol[1] = symbol[2];
     	}
     	free_mem();
 	to_canonical();

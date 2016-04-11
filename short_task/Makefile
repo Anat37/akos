@@ -1,18 +1,19 @@
 CC = gcc
 
-CFLAGS = -g -ansi -pedantic -w
-
-SOURCES = safe_gets.c signals.c 
+CFLAGS = -g -pedantic 
+SOURCES = safe_gets.c signals.c bitwise_print.c
 
 PROGRAMS = $(SOURCES:.c= ) 
 
 OBJ = $(SOURCES:.c=.o)
 
-all: $(PROGRAMS)
+all: signals bitwise_print safe_gets.o
 
-
-$(PROGRAMS): $(OBJ)
-	$(CC) $(CFLAGS) $(OBJ) -o $@
+signals: signals.o
+	$(CC) signals.o -o signals
+	
+bitwise_print: bitwise_print.o
+	$(CC) bitwise_print.o -o bitwise_print
 
 .c.o:
 	$(CC) $(CFLAGS) $< -c -o $@

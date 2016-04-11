@@ -1,8 +1,8 @@
 CC = gcc
-CFLAGS = -g
+CFLAGS = -g 
 
 all: main.o safe_gets.o
-	$(CC) $(CFLAGS) main.o safe_gets.o -o lesss
+	$(CC) main.o safe_gets.o -o lesss
 	
 main.o: main.c
 	$(CC) $(CFLAGS) -c main.c -o main.o

@@ -13,7 +13,10 @@ int safe_gets(FILE* f,char** res)
     return 1; 
   buf = malloc(110 * sizeof(char));
   if (*res != NULL)
+  {
       free(*res);
+      *res = NULL;
+  }
   *res = malloc(sizeof(char));
   do
   {
