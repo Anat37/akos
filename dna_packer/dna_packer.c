@@ -19,10 +19,14 @@ int safe_gets(FILE* f,char** res)
   do
   {
     if (fgets(buf, 100, f) == NULL)
+    {
+      free(buf);
       return 2;
+    }
     ptr = realloc(*res, size + 99);
     if (ptr == NULL)
     {
+      free(buf);
       free(*res);
       return 3;
     }
@@ -37,8 +41,8 @@ int safe_gets(FILE* f,char** res)
 int unpacker(FILE *inf, FILE *outf)
 {
   int err;
-  char *str;
-  unsigned int buf;
+  char *str = NULL;
+  unsigned int buf = 0;
   int flag;
   int pos, groupw, writen;
   size_t read;
