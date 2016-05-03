@@ -1,0 +1,5 @@
+var_hello=hello
+var_print=hello world #asda
+
+tmp :
+	echo "first $(var_hello)"

@@ -1,0 +1,14 @@
+
+#adsad
+
+include guns
+
+bye : make.cpp Types.cpp $(var_hello) tmp asd.o #sdasda
+	echo "hello!" #hqweqw
+	echo "hello!!"  #wasm
+
+%.o:
+	echo "regexp"
+
+$(var_hello) : tmp
+	echo "second"

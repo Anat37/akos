@@ -18,4 +18,7 @@
 **/a.out
 **/.DS_Store
 **/thumbs.db
+**/*.orig
+shell/.ycm_extra_conf.py
+shell/.ycm_extra_conf.pyc
 
