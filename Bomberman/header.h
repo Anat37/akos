@@ -7,8 +7,15 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <string.h>
-#include <pthread.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netinet/ip.h>
 #include <netinet/in.h>
+#include <pthread.h>
+#include <netdb.h>
+
+void help_print()
+{
+	printf("help is not ready yet:)");
+}
+

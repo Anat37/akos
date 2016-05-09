@@ -2,17 +2,18 @@
 #define DAEMON_NAME "bomberserver"
 #define DAEMON_USERNAME "daemonuser"
 
-char* logname = "syslog";
-char* pid_file_name = DAEMON_NAME; 
+char* logname = DAEMON_NAME;
+char* pid_file_name = "/var/run/bomberserver"; 
 int pid_file_fd;
 
 int stop_server();
 
 void usr1_handler(int sig)
 {	
-	syslog(LOG_NOTICE, "Server shut down by SIGUSR1");
+	syslog(LOG_ERR, "Server shut down by SIGUSR1");
 	closelog();
 	close(pid_file_fd);
+	stop_server();
 	exit(0);
 }
 
@@ -31,7 +32,7 @@ int become_daemon()
     		return 1;
   	}
 
-  	pid_file_fd = open("/var/run/DAEMON_NAME", O_CREAT | O_WRONLY, 0644);
+  	pid_file_fd = open(pid_file_name, O_CREAT | O_WRONLY, 0644);
 
   	if (pid_file_fd == -1)
   	{
@@ -89,10 +90,10 @@ int become_daemon()
   
   	pid = getpid();
 
-  	pid_file = fdopen(pid_file_fd, "w");
+	pid_file = fdopen(pid_file_fd, "w");
   	if (pid_file == NULL)
   	{
-    		syslog(LOG_ERR, "Could manage to open pid file fd [%d]\n", pid_file_fd);
+    		syslog(LOG_ERR, "Could not manage to open pid file fd [%d]\n", pid_file_fd);
     		closelog();
     		close(pid_file_fd);
     		exit(0);
@@ -101,5 +102,6 @@ int become_daemon()
   	fprintf(pid_file, "%ld", (long)pid);
   	fflush(pid_file);
 	signal(SIGUSR1, &usr1_handler);
+	syslog(LOG_INFO, "Signal handler set");
 	return 0;
 }

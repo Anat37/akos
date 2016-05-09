@@ -4,7 +4,7 @@
 
 int main()
 {
-	int pid;
+	int pid;/*
 	FILE* fstr = fopen("/var/run/bomberserver", "r");
 	
 	if (fstr == NULL)
@@ -12,7 +12,7 @@ int main()
 		printf("No such a file\n");
 		return 0;
 	}
-	fscanf(fstr, "%d", &pid);
-	kill((pid_t)pid, SIGUSR1);
+	fscanf(fstr, "%d", &pid);*/
+	kill((pid_t)6239, SIGKILL);
 	return 0;
 }

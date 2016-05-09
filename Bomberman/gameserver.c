@@ -16,8 +16,13 @@ float movement_health_drop = 4;
 float step_standard_delay = 0.1;
 float moratory_duration = 5;
 
-void help_print()
+void err_report(char* str, short flag)	/*flag for system call error*/
 {
+	if (daemon_flag)
+		syslog(LOG_ERR, str);
+	else if (flag)
+		perror(str);
+		else printf("%s\n", str);	
 }
 
 int free_mem()
@@ -32,8 +37,7 @@ int free_mem()
 	return 0;
 }
 
-#include "serverpart.h"
-#include "daemonbeing.h"
+
 
 void map_read()
 {
@@ -49,7 +53,6 @@ void map_read()
 	for (i = 0; i < map_size_n; i++)
 	{
 		str = NULL;
-		printf("ok\n");
 		safe_gets(mapf, &str);
 		map[i] = str; 
 	}
@@ -67,6 +70,10 @@ void map_read()
 	free(str);
 	fclose(mapf);
 }
+
+#include "msg.h"
+#include "serverpart.h"
+#include "daemonbeing.h"
 
 void options(int argc, char* argv[])
 {
@@ -106,6 +113,6 @@ int main(int argc, char* argv[])
 			daemon_flag = 0;
 	}
 	map_read();
-	printf("%f\n", mining_time);
+	server_work();
 	return stop_server();
 }
