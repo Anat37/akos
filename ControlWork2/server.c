@@ -36,46 +36,36 @@ int i;
 pthread_mutex_t mutex[1];
 
 
-int msg_rec(int desc, size_t* len, void** arg)
+int msg_rec(int desc, char** arg)
 {
 	int readed = 0;
-	ssize_t read_ret;
-	char* str = NULL;
-
-	while (readed < sizeof(int))
-	{
-		read_ret = read(desc, (void*)len + readed, sizeof(int) - readed);
-		if (read_ret == -1)
-			return -1;
-		if (read_ret == 0)
-			return -1;
+	int read_ret = 0;
+	char* str;
+	str = malloc(25);
+	
+	do {
+		read_ret = read(desc, str + readed, sizeof(char));
 		readed += read_ret;
-	}
-	str = malloc((unsigned int)*len);
-	readed = 0;
-	while (readed < *len)
-	{
-		read_ret = read(desc, str + readed, *len - readed);
-		if (read_ret == -1)
-			return -1;
-		if (read_ret == 0)
-			break;
-		readed += read_ret;
-	}
+		if (read_ret == 0) return 0;
+		if (read_ret == -1) return -1;
+		if (readed > 20) return -1; 
+	} while (*(str + readed - 1) != '\0');
 	*arg = str;
-	if (read_ret == 0)
-	{
-		return 1;
-	}
 	return 0; 
 }
 
-void msg_send(int desc, size_t len, void* arg)
+void msg_send(int desc, size_t len, const char* arg)
 {
 	write(desc, arg, len);
 	return; 
 }
 
+const char msgok[] = "hello";
+const char* msg10 = "SEVEN YES";
+const char* msg2 = "SEVEN NO";
+const char* msg31 = "LARGE NUMBER 1";
+const char* msg32 = "LARGE NUMBER 2";
+const char* msg4 = "WORK END";
 void handler(int sig)
 {
     if (sig == SIGTERM)
@@ -83,7 +73,8 @@ void handler(int sig)
         int i;
         close(sock_id);
         for (i = 0; i < THREADS; ++i)
-        {
+        {	
+            msg_send(arr[i].desc, strlen(msg4) + 1, msg4);
             pthread_cancel(arrthread[i]);
         }
         for (i = 0; i < THREADS; ++i)
@@ -96,11 +87,6 @@ void handler(int sig)
         exit(0);
     }
 }
-
-const char msgok[] = "hello";
-const char* msg1 = "SEVEN YES";
-const char* msg2 = "SEVEN NO";
-const char* msg3 = "LARGE NUMBERS";
 
 
 void* fthread(void* arg)
@@ -119,26 +105,26 @@ void* fthread(void* arg)
 		pthread_mutex_unlock(&(ptr->mutex));
 		
 		if (msg_rec(ptr->desc, &str1) < 0)
-			msg_send(ptr->desc, strlen(msg3) + 1, msg3);
+			msg_send(ptr->desc, strlen(msg31) + 1, msg31);
 		else {
-			msg_rec(ptr->desc, &str2);
-			
-			{
-				a = atoi(str1);
-				b = atoi(str2);
-				if (a < 0) 
-				{
-					msg_send(ptr->desc, strlen(msg3) + 1, msg3);
-				} else if (b < 0)
+			if (msg_rec(ptr->desc, &str2) <0)
+				msg_send(ptr->desc, strlen(msg32) + 1, msg32);
+			else {
+					a = atoi(str1);
+					b = atoi(str2);
+					if (a < 0) 
 					{
-						msg_send(ptr->desc, strlen(msg3) + 1, msg3);
-					} else 
-						if (a + b % 7 == 0)
+						msg_send(ptr->desc, strlen(msg31) + 1, msg31);
+					} else if (b < 0)
 						{
-							msg_send(ptr->desc, strlen(msg1) + 1, msg1);
+							msg_send(ptr->desc, strlen(msg32) + 1, msg32);
 						} else 
-							msg_send(ptr->desc, strlen(msg2) + 1, msg2);
-			}
+							if (a + b % 7 == 0)
+							{
+								msg_send(ptr->desc, strlen(msg10) + 1, msg10);
+							} else 
+								msg_send(ptr->desc, strlen(msg2) + 1, msg2);
+				}
 		}
 		close(ptr->desc);
 		free(str1);
@@ -218,7 +204,7 @@ int main(int argc, char** argv)
             {
                 arr[i].free = 2;
                 arr[i].desc = acc_ret;
-                pthread_cond_signal(arr[i].cond);
+                pthread_cond_signal(&arr[i].cond);
             	pthread_mutex_unlock(&(arr[i].mutex));
                 break;
             }
