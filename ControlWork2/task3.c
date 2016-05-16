@@ -39,7 +39,7 @@ int main(int argc, char* argv[])
 		close(pipes[0][0]);
 		close(pipes[1][1]);
 		close(pipes[1][0]);
-		dup2(1, pipes[0][1]);
+		dup2(pipes[0][1], 1);
 		execlp(argv[1], argv[1], NULL);
 		printf("error");
 		return 1;
@@ -51,8 +51,8 @@ int main(int argc, char* argv[])
 	{
 		close(pipes[0][1]);
 		close(pipes[1][0]);
-		dup2(0, pipes[0][0]);
-		dup2(1, pipes[1][1]);
+		dup2(pipes[0][0], 0);
+		dup2(pipes[1][1], 1);
 		execlp(argv[2], argv[2], NULL);
 		printf("error");
 		return 1;
@@ -64,7 +64,7 @@ int main(int argc, char* argv[])
 		close(pipes[0][1]);
 		close(pipes[0][0]);
 		close(pipes[1][1]);
-		dup2(0, pipes[1][0]);
+		dup2(pipes[1][0], 0);
 		execlp(argv[3], argv[3], NULL);
 		printf("error");
 		return 1;
@@ -120,7 +120,7 @@ int main(int argc, char* argv[])
 	
 	if (pid[4] == 0){
 		close(pipes[2][0]);
-		dup2(1, pipes[2][1]);
+		dup2(pipes[2][1], 1);
 		execlp(argv[5], argv[5], "root", NULL);
 		printf("error");
 		return 1;
@@ -130,7 +130,7 @@ int main(int argc, char* argv[])
 	
 	if (pid[5] == 0){
 		close(pipes[2][1]);
-		dup2(0, pipes[2][0]);
+		dup2(pipes[2][0], 0);
 		execlp(argv[6], argv[6], NULL);
 		printf("error");
 		return 1;
