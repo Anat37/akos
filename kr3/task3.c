@@ -68,8 +68,8 @@ int main()
         if (data.mes_type == ACCEPT_CL || currentcl != 0)
         {	
         	safe_gets(fstr, &str);
-        	data.mes_type = STRING + (long)data.client;
-        	msgsnd(msgid, &data, sizeof(mes_t) - sizeof(long), 0);
+        	*((long*)str) = (STRING + (long)data.client);
+        	msgsnd(msgid, &str, sizeof(mes_t) - sizeof(long), 0);
         } 
     }
     return 0;
