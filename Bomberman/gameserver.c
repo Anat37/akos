@@ -1,6 +1,5 @@
 #include "header.h"
 
-unsigned daemon_flag = 0;
 unsigned port_num = 1050;
 char* map_file_name = "defmap.map";
 char* map_name;
@@ -15,15 +14,6 @@ float stay_health_drop = 1;
 float movement_health_drop = 4;
 float step_standard_delay = 0.1;
 float moratory_duration = 5;
-
-void err_report(char* str, short flag)	/*flag for system call error*/
-{
-	if (daemon_flag)
-		syslog(LOG_ERR, str);
-	else if (flag)
-		perror(str);
-		else printf("%s\n", str);	
-}
 
 int free_mem()
 {
@@ -90,7 +80,7 @@ void options(int argc, char* argv[])
     			case 'm': map_file_name = optarg;
     				break;
     			case 'p': port_num = atoi(optarg);
-    				if (port_num > 10000)
+    				if (port_num > 65000)
     					{
     						printf("Invalid port number");
     						port_num = 1050;	
