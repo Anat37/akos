@@ -19,3 +19,13 @@ void help_print()
 	printf("help is not ready yet:)");
 }
 
+unsigned daemon_flag = 0;
+
+void err_report(char* str, short flag)	/*flag for system call error*/
+{
+	if (daemon_flag)
+		syslog(LOG_ERR, str);
+	else if (flag)
+		perror(str);
+		else printf("%s\n", str);	
+}
