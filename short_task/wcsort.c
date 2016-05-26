@@ -1,19 +1,17 @@
-#include <stdio.h>
 #include <stdlib.h>
-
+#include <stdio.h>
 
 volatile long words = 0;
 
 int safe_gets(FILE* f,char** res)
 {
   int size = 30;
-  char* buf;
-  char* ptr;
-  char c; 
+  char* buf = NULL;
+  char* ptr = NULL;
+  char c = EOF; 
   int i = 0;
   int wflag = 0;
   int flag = 1;
-  printf("First String");
   if (f == NULL)
     return 1;
   if (feof(f))
@@ -47,13 +45,15 @@ int safe_gets(FILE* f,char** res)
             free(buf);
             return 3;
         }
+        buf = ptr;
     }
     buf[i] = c;
     ++i;
     if (c == '\n') 
         flag = 0;
   }
-  printf("End String");
+  if (wflag)
+  	++words;
   *res = buf;
   buf = NULL;
   ptr = NULL;
@@ -75,6 +75,20 @@ int mycmp(const char* a, const char* b)
         return 1;
     else return -1;    
 }
+
+void myputs(FILE* f, char* str)
+{
+	int i = 0;
+	if (str == NULL)
+		return;
+	while (str[i] != '\n' && str[i] != EOF)
+	{
+		fprintf(f, "%c", str[i]);
+		++i;
+	}
+	fprintf(f, "\n");
+}
+
 int main(int argc, char* argv[])
 {
     char** data = NULL;
@@ -84,13 +98,12 @@ int main(int argc, char* argv[])
     int i, j;
     FILE* inf;
     FILE* outf;
-    
+    int ret = 0;
     if (argc < 3)
     {
         printf("Few args");
         return 0;
     }
-    
     inf = fopen(argv[1], "r");
     outf = fopen(argv[2], "w");
     if (outf == NULL || inf == NULL)
@@ -99,7 +112,9 @@ int main(int argc, char* argv[])
         return 0;
     }
     data = malloc(10 * sizeof(char*));
-    while (safe_gets(inf, &data[strcnt]) == 0)
+    data[strcnt] = NULL;
+    ret = safe_gets(inf, &data[strcnt]);
+    while (ret == 0)
     {
         strcnt++;
         if (strcnt + 1 == strsize)
@@ -109,10 +124,12 @@ int main(int argc, char* argv[])
             if (data == NULL)
             printf("whats up?");
         }
-        printf("%s", data[strcnt - 1]);
-        /*printf("String %d,%d, Words: %ld\n",strcnt, strsize, words);*/
+        /*printf("%s", data[strcnt - 1]);*/
+        data[strcnt] = NULL;
+        ret = safe_gets(inf, &data[strcnt]);
+        
     }
-    printf("End String");
+    
     for (i = 0; i < strcnt; ++i)
         for (j = i + 1; j < strcnt; ++j)
         if (mycmp(data[i], data[j]) >= 0) {
@@ -122,9 +139,12 @@ int main(int argc, char* argv[])
         }
     printf("Words: %ld\n", words);
     for (i = 0; i < strcnt; ++i){
-        fprintf(outf, "%s", data[i]);
+        myputs(outf, data[i]);
         free(data[i]);
-    }    
-    free(data);    
+    } 
+    free(data[i]);   
+    free(data);
+    fclose(inf);
+    fclose(outf);    
     return 0;    
 }
