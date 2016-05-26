@@ -1,19 +1,6 @@
-#include "header.h"
+#include "serverheader.h"
 
-unsigned port_num = 1050;
-char* map_file_name = "defmap.map";
-char* map_name;
-char** map;
-int map_size_n;
-int map_size_m;
-float initial_health = 500;
-float hit_value      = 50;
-float recharge_duration = 3;
-float mining_time = 3;
-float stay_health_drop = 1;
-float movement_health_drop = 4;
-float step_standard_delay = 0.1;
-float moratory_duration = 5;
+
 
 int free_mem()
 {
@@ -27,14 +14,13 @@ int free_mem()
 	return 0;
 }
 
-
-
 void map_read()
 {
 	FILE* mapf = fopen(map_file_name, "r");
 	int i;
 	char* str = NULL;
-	
+	float value;
+	int itemsize = 0;
 	map_name = (char*) malloc(256 * sizeof(char)); 
 	
 	fscanf(mapf, "%s %dx%d", map_name, &map_size_n, &map_size_m);
@@ -51,13 +37,30 @@ void map_read()
 	fscanf(mapf, "\n"); 
 	fscanf(mapf, "%s = %f", str, &initial_health);
 	fscanf(mapf, "%s = %f", str, &hit_value);
-	fscanf(mapf, "%s = %f", str, &recharge_duration);
-	fscanf(mapf, "%s = %f", str, &mining_time);
+	fscanf(mapf, "%s = %f", str, &value);
+	recharge_duration 
+	fscanf(mapf, "%s = %f", str, &value;);
+	mining_time == roundf(value*1000);
 	fscanf(mapf, "%s = %f", str, &stay_health_drop);
 	fscanf(mapf, "%s = %f", str, &movement_health_drop);
-	fscanf(mapf, "%s = %f", str, &step_standard_delay);
-	fscanf(mapf, "%s = %f", str, &moratory_duration);
+	fscanf(mapf, "%s = %f", str, &value);
+	step_standard_delay = = roundf(value*1000);
+	fscanf(mapf, "%s = %f", str, &value);
+	moratory_duration =  roundf(value*1000);
+	fscanf(mapf, "\nitems:\n");
 	free(str);
+	while (!feof(mapf))
+	{
+		if (itemsize == mobjectscnt)
+		{
+			itemsize += 10;
+			mobjects = realloc(mobjects, itemsize * sizeof(struct mobject)); 
+		}
+		fscanf(mapf, "%d %d %d\n", &mobjects[mobjectscnt].x,  &mobjects[mobjectscnt].y,  &mobjects[mobjectscnt].arg);
+		mobjects[mobjectscnt].type = OBJ_MAP;
+		++mobjectscnt;
+	}
+	
 	fclose(mapf);
 }
 

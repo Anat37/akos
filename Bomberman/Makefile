@@ -1,6 +1,6 @@
 
 CC = gcc
-CFLAGS = -g -c
+CFLAGS = -g -c -ansi -pedantic
 
 all: gameserver killer gameclient header.h
 
@@ -17,13 +17,16 @@ killer.o: killer.c
 	$(CC) $(CFLAGS) killer.o killer.c 
 	
 safe_gets.o: ../short_task/safe_gets.c
-	$(CC) $(CFLAGS) safe_gets.o ../short_task/safe_gets.c 
+	$(CC) $(CFLAGS) -o safe_gets.o ../short_task/safe_gets.c 
 	
-gameclient: gameclient.o header.h msg.h
-	$(CC) gameclient.o -o gameclient 
+gameclient: safe_gets.o gameclient.o printout.o  
+	$(CC) safe_gets.o gameclient.o printout.o -o gameclient  
 	
 gameclient.o: gameclient.c header.h msg.h
 	$(CC) $(CFLAGS) gameclient.c -o gameclient.o 
 
+printout.o: printout.c
+	$(CC) $(CFLAGS) printout.c -o printout.o
+
 clean:
-	rm gameserver.o gameclient.o
+	rm %.o

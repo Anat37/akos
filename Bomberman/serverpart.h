@@ -2,9 +2,6 @@
 #define THREADS_INIT 16
 #define T_PLAYER 101
 #define T_HOST 102
-#define ST_WAITING 201
-#define ST_READY 202
-#define ST_PLAYING 203
 #define MUTEX_CNT 5
 
 int sock_id;
@@ -13,8 +10,17 @@ int acc_ret;
 struct sockaddr_in server_addr;
 
 struct splayer{
-	int thread_id = 0;
-	char* name = NULL;
+	int thread_id;
+	int x;
+	int y;
+	int status;
+	float hp;
+	int minecnt;
+	int minecd;
+	int guncd;
+	struct timespec lastmove;
+	struct timespec lasthp;
+	char* name;
 };
 
 struct sthread {
@@ -23,18 +29,23 @@ struct sthread {
     int type; 
 	int id;
 	int team_id;
-	struct splayer* pl = NULL;
+	int pl;
     pthread_mutex_t mutex;
     pthread_cond_t cond;
 };
 
 struct steam {
-	int max_pl_cnt = 0;
-	int pl_cnt = 0;
-	int status = ST_WAITING;
-	int* pl = NULL;
-	char* name = NULL;
-	void* map = NULL;
+	int thread_id;
+	int max_pl_cnt;
+	int pl_cnt;
+	int ready_cnt;
+	int status;
+	struct timespec start;
+	int* pl;
+	char* name;
+	char** map;
+	struct object** objects;
+	pthread_mutex_t* map_mutex;
 	pthread_mutex_t mutex;
 };
 
@@ -47,7 +58,7 @@ volatile int first_free;
 volatile int threadscnt = THREADS_INIT;
 volatile struct steam* team_arr;
 volatile struct splayer* player_arr; 
-volatile truct sthread* sthreads;
+volatile struct sthread* sthreads;
 pthread_t* plthread;
 
 pthread_mutex_t mutex[MUTEX_CNT];
@@ -82,61 +93,10 @@ int stop_server()
        	return 0;
 }
 
-int err_solve(size_t size, void* buf) /* ret val > 0 if error wasn't solved*/
-{
-	return 0;
-}
 
-int add_team(int fd)
-{
-	int type = 0;
-	int ret = 0; 
-	size_t size = 0;
-	void* buf = NULL;
-	pthread_mutex_lock(&mutex[2]);
-	if (teams_cnt + 1 < team_arr_size)
-	{
-		int i;
-		team_arr = realloc(team_arr, (team_arr_size + 16) * sizeof(struct steam) );
-		for (i = team_arr_size; i < team_arr_size + 16; ++i)
-			pthread_mutex_init(&team_arr[i].mutex);
-		team_arr_size += 16;	
-	}
-	++teams_cnt;
-	pthread_mutex_unlock(&mutex[2]);
-	ret = msg_rec(fd, &type, &size, &buf);
-	if (ret != 0)
-		return ret;
-	ret = (int) buf;
-	team_arr[teams_cnt - 1].max_pl_cnt = ret;
-	team_arr[teams_cnt - 1].pl = malloc(ret * sizeof(int));
-	ret = msg_rec(fd, &type, &size, &buf);
-	if (ret != 0)
-		return ret;
-	team_arr[teams_cnt - 1].name = (char*) buf;
-		
-}
 
-int add_player(int fd, int team_id, int pl_id)
-{
-	int type = 0;
-	int ret = 0; 
-	size_t size = 0;
-	void* buf = NULL;
-	pthread_mutex_lock(&mutex[3]);
-	if (players_cnt + 1 < player_arr_size)
-	{
-		player_arr = realloc(player_arr, (player_arr_size + 16) * sizeof(struct splayer) );
-		player_arr_size += 16;	
-	}
-	++players_cnt;
-	pthread_mutex_unlock(&mutex[3]);
-	ret = msg_rec(fd, &type, &size, &buf);
-	if (ret != 0)
-		return ret;
-	player_arr[players_cnt - 1].name = (char*) buf;
-	team_arr[team_id].pl[pl_cnt] = pl_id;
-}
+
+
 
 int player_init(struct sthread* ptr)
 {	
@@ -177,12 +137,9 @@ int player_init(struct sthread* ptr)
 	return 0; 
 }
 
-void player_gameplay()
-{
-}
-void team_gameplay(){
-	
-}
+
+#include "gameplay.h"
+
 void* playerthread(void* arg)
 {	
 	struct sthread* ptr = (struct sthread*) arg;
