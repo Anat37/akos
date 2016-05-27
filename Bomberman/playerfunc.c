@@ -1,31 +1,10 @@
-#include "serverheader.h"
-int add_player(int fd, int team_id, struct sthread* ptr)
-{
-	int type = 0;
-	int ret = 0; 
-	size_t size = 0;
-	void* buf = NULL;
-	pthread_mutex_lock(&mutex[3]);
-	if (players_cnt + 1 < player_arr_size)
-	{
-		player_arr = realloc(player_arr, (player_arr_size + 16) * sizeof(struct splayer) );
-		player_arr_size += 16;	
-	}
-	++players_cnt;
-	ptr->pl = players_cnt - 1;
-	pthread_mutex_unlock(&mutex[3]);
-	ret = msg_rec(fd, &type, &size, &buf);
-	if (ret != 0)
-		return ret;
-	player_arr[players_cnt - 1].name = (char*) buf;
-	team_arr[team_id].pl[team_arr[team_id].pl_cnt] = ptr->id;
-	++team_arr[team_id].pl_cnt;
-	if (team_arr[team_id].pl_cnt == team_arr[team_id].max_pl_cnt)
-		team_arr[team_id].status = ST_READY;
-	buf = NULL;
-    pthread_kill(plthread[team_arr[team_id].thread_id],  SIGUSR2);
-	return ret;
-}
+#include "header.h"
+
+/*
+
+extern void err_report(const char* str, short flag);
+extern void free_mem();*/
+
 void player_handler(int sig){
     
 }
@@ -45,14 +24,15 @@ void statSend(struct sthread* ptr)
 #define UP 1
 #define DOWN 2
 #define LEFT 3
-#define RIGHT 4 
+#define RIGHT 4
+ 
 void upd_status(struct sthread* ptr){
     int pl = ptr->pl;
     long k = time_from(player_arr[pl].lasthp);
     player_arr[pl].minecd -= k;
     player_arr[pl].guncd -= k;
     player_arr[pl].hp -= stay_health_drop * (k / step_standard_delay);
-    player_arr[pl].lasthp = time_inc(k / step_standard_delay);
+    player_arr[pl].lasthp = time_inc(player_arr[pl].lasthp, k / step_standard_delay);
     if (team_arr[ptr->team_id].objects[player_arr[pl].x][player_arr[pl].y].type == OBJ_MINE && 
     team_arr[ptr->team_id].objects[player_arr[pl].x][player_arr[pl].y].owner != pl)
     {
@@ -137,11 +117,12 @@ void bfs(struct sthread* ptr)
 }
 
 void move(struct sthread* ptr, int k){
-    int oldx = player_arr[ptr->pl]].x;
-    int oldy = player_arr[ptr->pl]].y;
+    int oldx = player_arr[ptr->pl].x;
+    int oldy = player_arr[ptr->pl].y;
     int newx = oldx;
     int newy = oldy;
-    if (time_from(player_arr[ptr->pl]].lastmove) < step_standard_delay|| player_arr[pl].minecd > recharge_duration)
+    int pl = ptr->pl;
+    if (time_from(player_arr[ptr->pl].lastmove) < step_standard_delay|| player_arr[pl].minecd > recharge_duration)
     {
         msg_send(ptr->desc, MSG_INFO_STRING, strlen(bad_mov) + 1, (void*) bad_mov);
         return;
@@ -159,10 +140,10 @@ void move(struct sthread* ptr, int k){
         pthread_mutex_lock(&team_arr[ptr->team_id].map_mutex[newx]);
         if (team_arr[ptr->team_id].map[newx][newy] == '*' || team_arr[ptr->team_id].map[newx][newy] == '+')
         {
-            player_arr[ptr->pl]].x = newx;
-            player_arr[ptr->pl]].y = newy;
-            player_arr[ptr->pl]].hp -= movement_health_drop - stay_health_drop;
-            k = clock_gettime(CLOCK_MONOTONIC, &player_arr[ptr->pl]].lastmove); 
+            player_arr[ptr->pl].x = newx;
+            player_arr[ptr->pl].y = newy;
+            player_arr[ptr->pl].hp -= movement_health_drop - stay_health_drop;
+            k = clock_gettime(CLOCK_MONOTONIC, &player_arr[ptr->pl].lastmove); 
             msg_send(ptr->desc, MSG_INFO_STRING, strlen(succ_mov) + 1, (void*)succ_mov);
             upd_status(ptr);
         } else 
@@ -180,7 +161,7 @@ void use_object(struct sthread* ptr)
 {
     int pl = ptr->pl;
     int k;
-    if (time_from(player_arr[ptr->pl]].lastmove) < step_standard_delay|| player_arr[pl].minecd > recharge_duration)
+    if (time_from(player_arr[ptr->pl].lastmove) < step_standard_delay|| player_arr[pl].minecd > recharge_duration)
     {
         msg_send(ptr->desc, MSG_INFO_STRING, strlen(bad_mov) + 1, (void*) bad_mov);
         return;
@@ -189,7 +170,7 @@ void use_object(struct sthread* ptr)
     {
         team_arr[ptr->team_id].objects[player_arr[pl].x][player_arr[pl].y].type = -1;
         player_arr[pl].hp += team_arr[ptr->team_id].objects[player_arr[pl].x][player_arr[pl].y].arg;
-        k = clock_gettime(CLOCK_MONOTONIC, &player_arr[ptr->pl]].lastmove); 
+        k = clock_gettime(CLOCK_MONOTONIC, &player_arr[ptr->pl].lastmove); 
         msg_send(ptr->desc, MSG_INFO_STRING, strlen(succ_mov) + 1, (void*)succ_mov);
         upd_status(ptr);
     } 
@@ -203,7 +184,7 @@ void put_min(struct sthread* ptr)
 {
     int pl = ptr->pl;
     int k;
-    if (time_from(player_arr[ptr->pl]].lastmove) < step_standard_delay) || player_arr[pl].minecd > recharge_duration)
+    if (time_from(player_arr[ptr->pl].lastmove) < step_standard_delay || player_arr[pl].minecd > recharge_duration)
     {
         msg_send(ptr->desc, MSG_INFO_STRING, strlen(bad_mov) + 1, (void*) bad_mov);
         return;
@@ -227,7 +208,7 @@ void put_min(struct sthread* ptr)
     player_arr[pl].minecd = mining_time + recharge_duration;
     team_arr[ptr->team_id].objects[player_arr[pl].x][player_arr[pl].y].type = OBJ_MINE;
     team_arr[ptr->team_id].objects[player_arr[pl].x][player_arr[pl].y].owner = pl;
-    k = clock_gettime(CLOCK_MONOTONIC, &player_arr[ptr->pl]].lastmove); 
+    k = clock_gettime(CLOCK_MONOTONIC, &player_arr[ptr->pl].lastmove); 
     msg_send(ptr->desc, MSG_INFO_STRING, strlen(succ_mov) + 1, (void*)succ_mov);
     upd_status(ptr);
 }
@@ -235,7 +216,7 @@ void gun_use(struct sthread* ptr)
 {
     int pl = ptr->pl;
     int k;
-    if (time_from(player_arr[ptr->pl]].lastmove) < step_standard_delay || player_arr[pl].minecd > recharge_duration)
+    if (time_from(player_arr[ptr->pl].lastmove) < step_standard_delay || player_arr[pl].minecd > recharge_duration)
     {
         msg_send(ptr->desc, MSG_INFO_STRING, strlen(bad_mov) + 1, (void*) bad_mov);
         return;
@@ -252,7 +233,7 @@ void gun_use(struct sthread* ptr)
     }
     bfs(ptr); 
     player_arr[pl].guncd = recharge_duration;
-    k = clock_gettime(CLOCK_MONOTONIC, &player_arr[ptr->pl]].lastmove); 
+    k = clock_gettime(CLOCK_MONOTONIC, &player_arr[ptr->pl].lastmove); 
     msg_send(ptr->desc, MSG_INFO_STRING, strlen(succ_mov) + 1, (void*)succ_mov);
     upd_status(ptr);    
 }
@@ -308,7 +289,7 @@ int pl_move(struct sthread* ptr, char* str){
         use_object(ptr);
         return 0;
     }
-    if (!strcmp(str, ch_st)
+    if (!strcmp(str, ch_st))
     {
         upd_status(ptr);
         return 0;
@@ -335,7 +316,7 @@ void player_gameplay(struct sthread* ptr){
     polls.events = POLLIN | POLLERR | POLLHUP;
     polls.revents = 0;
     while (flag){
-        poll_ret = poll(polls, 1, -1);
+        poll_ret = poll(&polls, 1, -1);
         pthread_mutex_lock(&team_arr[ptr->team_id].mutex);
             if (team_arr[ptr->team_id].status = ST_PLAYING)
             {
@@ -369,7 +350,7 @@ void player_gameplay(struct sthread* ptr){
     msg_send(ptr->desc, MSG_INFO_STRING, strlen(start) + 1, start);
     setSend(ptr->desc);
     mapSend(&team_arr[ptr->team_id], ptr->desc, player_arr[ptr->pl].x, player_arr[ptr->pl].y);
-    statSend(ptr->desc, ptr->pl);
+    statSend(ptr);
     pthread_mutex_lock(&team_arr[ptr->team_id].mutex);
     ++team_arr[ptr->team_id].ready_cnt;
     if (team_arr[ptr->team_id].ready_cnt == team_arr[ptr->team_id].pl_cnt)
@@ -389,7 +370,7 @@ void player_gameplay(struct sthread* ptr){
     msg_ret = clock_gettime(CLOCK_MONOTONIC, &player_arr[ptr->pl].lasthp);
     flag = 1;
     while (flag){
-        poll_ret = poll(polls, 1, -1);
+        poll_ret = poll(&polls, 1, -1);
         pthread_mutex_lock(&team_arr[ptr->team_id].mutex);
             if (team_arr[ptr->team_id].status = ST_ENDG)
             {

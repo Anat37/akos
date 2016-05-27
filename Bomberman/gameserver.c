@@ -1,6 +1,17 @@
-#include "serverheader.h"
+#include "header.h"
+#include <math.h>
+unsigned daemon_flag = 0;
 
 
+
+void err_report(const char* str, short flag)	/*flag for system call error*/
+{
+	if (daemon_flag)
+		syslog(LOG_ERR, str);
+	else if (flag)
+		perror(str);
+		else printf("%s\n", str);	
+}
 
 int free_mem()
 {
@@ -11,8 +22,13 @@ int free_mem()
 	}
 	free(map);
 	free(map_name);
+  free(mobjects);
 	return 0;
 }
+
+#include "serverpart.h"
+#include "daemonbeing.h"
+
 
 void map_read()
 {
@@ -22,36 +38,45 @@ void map_read()
 	float value;
 	int itemsize = 0;
 	map_name = (char*) malloc(256 * sizeof(char)); 
-	
+	if (mapf == NULL)
+  {
+    err_report("Bad map file", 0);
+    exit(0);
+  }
+  
 	fscanf(mapf, "%s %dx%d", map_name, &map_size_n, &map_size_m);
-	map = (char**) malloc((map_size_n + 2) * sizeof(char*));
-	
+  
+  map_size_n += 2;
+  map_size_m += 2;
+	map = (char**) malloc((map_size_n) * sizeof(char*));
+	fscanf(mapf, "\n");
 	for (i = 0; i < map_size_n; i++)
 	{
 		str = NULL;
 		safe_gets(mapf, &str);
-		map[i] = str; 
+		map[i] = str;
 	}
 	str = NULL;
 	str = (char*) malloc(256 * sizeof(char));
 	fscanf(mapf, "\n"); 
 	fscanf(mapf, "%s = %f", str, &initial_health);
-	fscanf(mapf, "%s = %f", str, &hit_value);
+  fscanf(mapf, "%s = %f", str, &hit_value);
 	fscanf(mapf, "%s = %f", str, &value);
-	recharge_duration 
-	fscanf(mapf, "%s = %f", str, &value;);
-	mining_time == roundf(value*1000);
+  recharge_duration = roundf(value*1000);
+	fscanf(mapf, "%s = %f", str, &value);
+	mining_time = roundf(value*1000);
 	fscanf(mapf, "%s = %f", str, &stay_health_drop);
 	fscanf(mapf, "%s = %f", str, &movement_health_drop);
 	fscanf(mapf, "%s = %f", str, &value);
-	step_standard_delay = = roundf(value*1000);
+	step_standard_delay  = roundf(value*1000);
 	fscanf(mapf, "%s = %f", str, &value);
 	moratory_duration =  roundf(value*1000);
 	fscanf(mapf, "\nitems:\n");
+  
 	free(str);
 	while (!feof(mapf))
 	{
-		if (itemsize == mobjectscnt)
+		if (itemsize <= mobjectscnt)
 		{
 			itemsize += 10;
 			mobjects = realloc(mobjects, itemsize * sizeof(struct mobject)); 
@@ -63,10 +88,6 @@ void map_read()
 	
 	fclose(mapf);
 }
-
-#include "msg.h"
-#include "serverpart.h"
-#include "daemonbeing.h"
 
 void options(int argc, char* argv[])
 {
@@ -96,9 +117,23 @@ void options(int argc, char* argv[])
         	}	
         }	
 }
+void init_var(){
+	team_arr_size = 0;
+	player_arr_size = 0;
 
+	port_num = DEF_PORT;
+	map_file_name = "defmap.map";
+
+	mobjects= NULL;
+	mobjectscnt =  0;
+  team_arr = NULL;
+  player_arr = NULL; 
+  sthreads = NULL;
+  plthread = NULL;
+}
 int main(int argc, char* argv[])
 {	
+	init_var();
 	options(argc, argv);
 	if (daemon_flag)
 	{	

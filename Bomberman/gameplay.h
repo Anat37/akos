@@ -7,19 +7,20 @@ void mapClone(struct steam* ptr)
     ptr->map_mutex = malloc(map_size_n * sizeof(pthread_mutex_t));
     for (i = 0; i < map_size_n; ++i)
     {
-        pthread_mutex_init(&ptr->map_mutex[i]);
+        pthread_mutex_init(&ptr->map_mutex[i], NULL);
         ptr->map[i] = malloc((strlen(map[i]) + 1) * sizeof(char));
         ptr->objects[i] = malloc(map_size_m * sizeof(struct object));
         for (j = 0; j < map_size_m; ++j)
         {
             ptr->objects[i][j].type = -1;
         }
-        strcpy(str->map[i], map[i]);
+        strcpy(ptr->map[i], map[i]);
     }
-    for (i = 0; i < objectscnt; ++i)
+    for (i = 0; i < mobjectscnt; ++i)
     {
-        ptr->objects[objects[i].x][objects[i].y] = mobjects[i];
-        ptr->map[objects[i].x][objects[i].y] = '+'
+        ptr->objects[mobjects[i].x][mobjects[i].y].arg = mobjects[i].arg;
+        ptr->objects[mobjects[i].x][mobjects[i].y].type = mobjects[i].type;
+        ptr->map[mobjects[i].x][mobjects[i].y] = '+';
     }
     for (l = 0; l < ptr->max_pl_cnt; ++l)
     {
@@ -72,14 +73,14 @@ void mapSend(struct steam* ptr,int fd, int x, int y)
         if (i > map_size_n || i < 0){
             strcpy(buf, str);
         } else {
-            pthread_mutex_lock(&ptr->mutex[i]);
+            pthread_mutex_lock(&(ptr->map_mutex[i]));
             for (j = y - 10; j < y + 10; ++j)
                 if (j >= 0 && j < map_size_m)
                     buf[j + 10 - y] = ptr->map[i][j];
                 else
                     buf[j + 10 - y] = str[j + 10 - y];
             buf[20] = '\0';
-            pthread_mutex_unlock(&ptr->mutex[i]);
+            pthread_mutex_unlock(&(ptr->map_mutex[i]));
         }
         msg_send(fd, MSG_MAP_STRING, 21, buf);
     }    
@@ -112,7 +113,89 @@ void wakeCond(int team_id)
     n = team_arr[team_id].pl_cnt;
     for (i = 0; i < n; ++i)
     {
-        pthread_cond_signal(&sthreads[player_arr[team_arr[team_id].pl[i]].thread_id].cond,SIGUSR1);
+        pthread_cond_signal(&sthreads[player_arr[team_arr[team_id].pl[i]].thread_id].cond);
     }   
 }
+
+
+
+int add_player(int fd, int team_id)
+{
+	int type = 0;
+	int ret = 0;
+  int i;
+	size_t size = 0;
+	void* buf = NULL;
+	pthread_mutex_lock(&mutex[3]);
+	if (players_cnt + 1 >= player_arr_size)
+	{
+		player_arr = realloc(player_arr, (player_arr_size + 16) * sizeof(struct splayer) );
+    for (i = player_arr_size; i < player_arr_size + 16; ++i)
+    {
+      player_arr[i].name = NULL;
+    }
+		player_arr_size += 16;	
+	}
+	pthread_mutex_unlock(&mutex[3]);
+	ret = msg_rec(fd, &type, &size, &buf);
+	if (ret != 0)
+		return ret;
+	player_arr[players_cnt].name = (char*) buf;
+	team_arr[team_id].pl[team_arr[team_id].pl_cnt] = players_cnt;
+	++team_arr[team_id].pl_cnt;
+	if (team_arr[team_id].pl_cnt == team_arr[team_id].max_pl_cnt)
+		team_arr[team_id].status = ST_READY;
+	buf = NULL;
+  printf("theam_id %d\n", team_id);
+  printf("thread_id %d\n", team_arr[team_id].thread_id);
+  pthread_kill(plthread[team_arr[team_id].thread_id],  SIGUSR2);
+  ++players_cnt;
+	return ret;
+}
+
+
+int add_team(int fd, int tid)
+{
+	int type = 0;
+	int ret = 0; 
+	size_t size = 0;
+	void* buf = NULL;
+	pthread_mutex_lock(&mutex[2]);
+	if (teams_cnt + 1 >= team_arr_size)
+	{
+		int i;
+		team_arr = realloc(team_arr, (team_arr_size + 16) * sizeof(struct steam) );
+		for (i = team_arr_size; i < team_arr_size + 16; ++i)
+    {
+			team_arr[i].pl = NULL;
+      team_arr[i].name = NULL;
+      team_arr[i].map = NULL;
+      team_arr[i].objects = NULL;
+      team_arr[i].map_mutex = NULL;
+      pthread_mutex_init(&team_arr[i].mutex, NULL);
+    }  
+    team_arr_size += 16;	
+    printf("team realloc: %d\n", team_arr_size);
+	}
+	pthread_mutex_unlock(&mutex[2]);
+	ret = msg_rec(fd, &type, &size, &buf);
+	if (ret != 0)
+		return ret;
+	ret = *(int*)buf;
+  printf("team_cnt: %d\n", ret);
+	team_arr[teams_cnt].pl_cnt = 0;
+  team_arr[teams_cnt].thread_id = tid;
+	team_arr[teams_cnt].ready_cnt = 0;
+	team_arr[teams_cnt].status = ST_WAITING;
+	team_arr[teams_cnt].max_pl_cnt = ret;
+	team_arr[teams_cnt].pl = malloc(ret * sizeof(int));
+	ret = msg_rec(fd, &type, &size, &buf);
+	if (ret != 0)
+		return ret;
+	team_arr[teams_cnt].name = (char*) buf;
+	buf = NULL;	
+  ++teams_cnt;
+	return ret;
+}
+
 

@@ -12,11 +12,12 @@
 #include <string.h>
 
 static struct termios stored_settings;
-volatile int strcount = 0;
+
 extern char** map;
 extern int game_status;
 extern int minecnt;
 extern float hp;
+
 void to_noncanonical()
 {
 	struct termios new_settings;

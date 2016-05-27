@@ -1,8 +1,8 @@
-#include "header.h"
+#include"defs.h"
 
 
-unsigned port_num = 1050;
-char* hostname = "localhost"; 
+unsigned port_num = DEF_PORT;
+char* hostname = "localhost";
 int sock_id;
 int cltype;
 struct hostent *hst;
@@ -27,9 +27,13 @@ void err_report(const char* str, short flag)	/*flag for system call error*/
 {
 	if (flag)
 		perror(str);
-		else printf("%s\n", str);	
+	else printf("%s\n", str);	
 }
-#include "msg.h"
+
+
+
+
+
 void options(int argc, char* argv[])
 {
 	char *opts = "s:p:h";/* hostname, port, help*/
@@ -65,6 +69,7 @@ void init_me()
 	int status;
 	short flag = 1;
 	FILE* fstr;
+  printf("Initing\n");
 	msg_ret = msg_rec(sock_id, &type, &size, &buf);
 	if (type == MSG_INFO_STRING && !strcmp((char*) buf ,conn_err)){
 		printf("Error connecting to server");
@@ -72,10 +77,13 @@ void init_me()
 		exit(0);
 	}
 	
+  printf("%s\n",buf);
 	
 	
 	msg_ret = msg_rec(sock_id, &type, &size, &buf);
 	teams_cnt = *((int*) buf);
+  
+  
 	printf("There are %d rooms on server now:\n", teams_cnt);
 	for (i = 0; i < teams_cnt; ++i)
 	{
@@ -100,7 +108,7 @@ void init_me()
 		}
 			else flag = 0;
 	}
-	if (teams_cnt)
+	if (!teams_cnt)
 		status = -1;
 	msg_send(sock_id, MSG_INFO_NUM, sizeof(int), (void*)&status);
 	fstr = fdopen(0, "r");
@@ -116,7 +124,7 @@ void init_me()
 				printf("Please enter shorter name\n");
 			else flag = 0;
 		}
-		flag = 0;
+		flag = 1;
 		while(flag)
 		{
 			printf("Please enter maximum number of players:");
@@ -141,6 +149,7 @@ void init_me()
 	}
 	msg_send(sock_id, MSG_INFO_STRING, strlen(buf) + 1, (void*)buf);
 	map = malloc(21*sizeof(char*));
+  printf("End INIt\n");
 	fclose(fstr);
 	free(buf);
 	return;
@@ -373,13 +382,17 @@ void host_wait(){
 	polls[1].fd = sock_id;
 	polls[1].events = POLLIN | POLLERR | POLLHUP;
 	polls[1].revents = 0;
-    while (flag){
+    while (flag)
+    { 
+        printf("Poll wait\n");
         poll_ret = poll(polls, 2, -1);
-		if (poll_ret == -1)
+        if (poll_ret == -1)
         {
             err_report("poll failed\n", 1);
             handler(SIGINT);
         }
+        if (polls[0].revents == 0)
+          printf("prost");
         if (polls[0].revents & POLLERR || polls[1].revents & POLLERR) {
             err_report("poll returned POLLERR\n", 0);
             handler(SIGINT);
@@ -391,16 +404,19 @@ void host_wait(){
         if (polls[1].revents & POLLIN){
             msg_ret = msg_rec(sock_id, &type, &size, &buf);
             if (type == MSG_HOST_PL){
-				printf("Number of players: %d", *((int*)buf));
+              printf("Number of players: %d", *((int*)buf));
             }
+            printf("MSG rec\n");
         }
-		if (polls[0].revents & POLLIN){
-			user_input(cltype);
-			if (game_status == 1){
+        if (polls[0].revents & POLLPRI)
+        {
+          printf("stdin\n");
+          user_input(cltype);
+          if (game_status == 1){
 				msg_send(sock_id, MSG_INFO_STRING, strlen(start) + 1, (void*)start);	
-			}
-		}
-		polls[1].revents = 0;
+          }
+        }
+        polls[1].revents = 0;
         polls[0].revents = 0; 
 	}
 	
@@ -408,10 +424,6 @@ void host_wait(){
 }
 int main(int argc, char* argv[])
 {
-	int i = 6;
-	int type = 0;
-	size_t len = 0;
-	char* buf = NULL;
 	options(argc, argv);
 	
 	sock_id = socket(PF_INET, SOCK_STREAM, 0);
@@ -437,7 +449,6 @@ int main(int argc, char* argv[])
    
     printf("\nEND\n");
 	to_canonical();
-    free(buf);
     close(sock_id);
 	return 0;
 }
