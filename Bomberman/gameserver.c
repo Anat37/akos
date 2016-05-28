@@ -103,7 +103,6 @@ void map_read()
 		mobjects[mobjectscnt].type = OBJ_MAP;
 		++mobjectscnt;
 	}
-	
 	fclose(mapf);
 }
 

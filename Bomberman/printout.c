@@ -69,24 +69,15 @@ int get_term_size()
 	return 0;
 } 
 
-void handlerTerm(int sig)
-{
-	if (sig == SIGWINCH)
-	{
-		get_term_size();
-		reprint();
-	}
-	signal(SIGWINCH, &handlerTerm);
-}
-
 void reprint()
 {
 	int i;
+  get_term_size();
 	for (i = 0; i < 20; ++i)
 		printf("%s\n", map[i]);
 	printf("Healthpoints:%f\n", hp);
 	printf("Mines:%d\n", minecnt);
-  for (i = 0; i < height - 23; ++i)
+  for (i = 0; i < height - 22; ++i)
     printf("\n");
   fflush(stdout);
 }
@@ -100,8 +91,10 @@ void user_input(int type)
 	unsigned int symbol;
 	if (type == 1)
 	{	
+    reprint();
 		symbol = getchar();
-		
+		if (symbol == -1)
+    printf("bad in!\n");
 		switch (symbol){
 			case 'w': move(UP); break;
 			case 'a': move(LEFT); break;
@@ -114,6 +107,7 @@ void user_input(int type)
 		}
 		if (symbol == '\004')
 			handler(SIGINT);
+    
 	} else 
 	{
 		symbol = getchar();

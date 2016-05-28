@@ -5,16 +5,16 @@
 extern void err_report(const char* str, short flag);
 extern void free_mem();*/
 
-void player_handler(int sig){
+int player_handler(int sig){
     printf("Give me a sign!");
-    signal(SIGUSR1, &player_handler);
+    return 0;
 }
 
 
 
 void statSend(struct sthread* ptr)
 {
-    msg_send(ptr->desc, MSG_INFO_STRING, strlen(st_send) + 1 , (void*)st_send);
+    msg_send(ptr->desc, MSG_INFO_STRING, strlen(st_send) + 1, (void*)st_send);
     msg_send(ptr->desc, MSG_STAT_NUM, sizeof(int), (void*)&player_arr[ptr->pl].x);
     msg_send(ptr->desc, MSG_STAT_NUM, sizeof(int), (void*)&player_arr[ptr->pl].y);
     msg_send(ptr->desc, MSG_STAT_NUM, sizeof(float), (void*)&player_arr[ptr->pl].hp);
@@ -48,19 +48,25 @@ void upd_status(struct sthread* ptr){
         return;
     }
     statSend(ptr);
-    
 }
 
 void damage(int team, int x, int y, float k){
-    int i;
+    int i, pl;
     for (i = 0; i < team_arr[team].pl_cnt; ++i)
-        if (player_arr[team_arr[team].pl[i]].x == x &&
-            player_arr[team_arr[team].pl[i]].y == y)
+    {
+        if (player_arr[pl].status == ST_DEAD)
+          continue;
+        pl = team_arr[team].pl[i];
+        if (player_arr[pl].x == x &&
+            player_arr[pl].y == y)
             {
-                player_arr[team_arr[team].pl[i]].hp -= k * hit_value;
-                pthread_kill(plthread[player_arr[team_arr[team].pl[i]].thread_id], SIGUSR1);
+                printf("Here comes the bfs!!!!!\n");
+                player_arr[pl].hp -= k * hit_value;
+                printf("Here %d\n",player_arr[pl].thread_id);
+                pthread_kill(plthread[player_arr[pl].thread_id], SIGUSR1);
                 break;
             }
+    }
 }
 void bfs(struct sthread* ptr)
 {
@@ -69,26 +75,41 @@ void bfs(struct sthread* ptr)
     int y = player_arr[ptr->pl].y;
     int i, j;
     float l;
+    printf("Here comes the bfs!!!!!\n");
     pthread_mutex_lock(&team_arr[ptr->team_id].mutex);
+    printf("Here comes the bfs!!!!!\n");
     if (x + 1 < map_size_n && (map[x+1][y] == ' ' || map[x+1][y] == '+'))
         map[x+1][y] = 'F';
     if (x + 1 < map_size_n && (map[x+1][y] == '@'))
+    {
+        map[x+1][y] = 'B';
         damage(ptr->team_id, x + 1, y, 1);
-        
+    }
+    
     if (y + 1 < map_size_m && (map[x][y + 1] == ' ' || map[x][y + 1] == '+'))
         map[x][y + 1] = 'F';
     if (y + 1 < map_size_m && (map[x][y + 1] == '@'))
+    {
+        map[x][y + 1] = 'B';
         damage(ptr->team_id, x, y + 1, 1);
-        
+    }
+    
     if (x - 1 > 0 && (map[x - 1][y] == ' ' || map[x - 1][y] == '+'))
         map[x - 1][y] = 'F';
     if (x - 1 > 0 && (map[x - 1][y] == '@'))
+    {
+        map[x - 1][y] = 'B';
         damage(ptr->team_id, x - 1, y, 1);
-        
+    }   
+    
     if (y - 1 > 0 && (map[x][y - 1] == ' ' || map[x][y - 1] == '+'))
-        map[x - 1][y] = 'F';
+        map[x][y - 1] = 'F';
     if (y - 1 > 0 && (map[x][y - 1] == '@'))
+    {
+        map[x][y - 1] = 'B';
         damage(ptr->team_id, x, y - 1, 1);
+    }
+    
     for (l = 0.9; l > 0; l-=0.1)
         for (i = 0; i < map_size_n; ++i)
             for(j = 0; j < map_size_m; ++j)
@@ -106,6 +127,9 @@ void bfs(struct sthread* ptr)
                             damage(ptr->team_id, i, j, l);
                     }
             }
+            
+    mapSend(&team_arr[ptr->team_id],ptr->desc,x,y);
+    
     for (i = 0; i < map_size_n; ++i)
             for(j = 0; j < map_size_m; ++j)
             {
@@ -114,6 +138,9 @@ void bfs(struct sthread* ptr)
                         map[i][j] = '+';
                     else
                         map[i][j] = ' ';
+                
+                if (map[i][j] == 'B')
+                  map[i][j] == '@';
             } 
     pthread_mutex_unlock(&team_arr[ptr->team_id].mutex);            
 }
@@ -315,16 +342,19 @@ void player_gameplay(struct sthread* ptr){
     int msg_ret = 0;
     void* buf = NULL;
     
-    signal(SIGUSR1, &player_handler);
+    printf("In play game\n");
+    
     polls.fd = ptr->desc;
     polls.events = POLLIN | POLLERR | POLLHUP;
     polls.revents = 0;
     while (flag){
+        printf("POLLIN\n");
         poll_ret = poll(&polls, 1, -1);
         pthread_mutex_lock(&team_arr[ptr->team_id].mutex);
             if (team_arr[ptr->team_id].status == ST_PLAYING)
             {
                 flag = 0;
+                printf("Proceed\n");
                 pthread_mutex_unlock(&team_arr[ptr->team_id].mutex);
                 continue;
             }
@@ -374,9 +404,9 @@ void player_gameplay(struct sthread* ptr){
     flag = 1;
     while (flag){
         poll_ret = poll(&polls, 1, -1);
-        
         if (poll_ret == -1)
         {
+            printf("Caught sig\n");
             err_report("poll failed\n", 1);
             
         }
@@ -396,22 +426,15 @@ void player_gameplay(struct sthread* ptr){
             }
         }
         printf("End move\n");
-        pthread_mutex_lock(&team_arr[ptr->team_id].mutex);
-            if (team_arr[ptr->team_id].status == ST_ENDG)
-            {
-                flag = 0;
-                msg_send(ptr->desc, MSG_INFO_STRING, strlen(disc) + 1, disc);
-                pthread_mutex_unlock(&team_arr[ptr->team_id].mutex);
-                continue;
-            } else pthread_mutex_unlock(&team_arr[ptr->team_id].mutex);
-        printf("End move\n");
         upd_status(ptr);
         mapSend(&team_arr[ptr->team_id], ptr->desc, player_arr[ptr->pl].x, player_arr[ptr->pl].y);
         polls.revents = 0;  
         if (player_arr[ptr->pl].status == ST_DEAD)
         {
-            
-        }     
+            msg_send(ptr->desc, MSG_INFO_STRING, strlen(disc) + 1, (void*)disc);
+            flag = 0;
+        }    
     }
+    free(buf);
     disconnect(ptr);
 }

@@ -113,6 +113,7 @@ int player_init(struct sthread* ptr)
 		ret = add_player(fd, ptr->team_id, ptr->id);
 	}
 	pthread_mutex_unlock(&mutex[1]);
+  free(buf);
 	return ret; 
 }
 
@@ -148,11 +149,12 @@ void* playerthread(void* arg)
 	}
 	return NULL;
 }
-void handler(int sig)
+int handler(int sig)
 {
 	stop_server();
   printf("SIGINT\n");
 	exit(0);
+  return 0;
 }
 
 
@@ -177,14 +179,12 @@ void restart_thr(int k)
 
 
 
-void handup(int sig)
+int handup(int sig)
 {
   int poll_ret;
   int i;
   struct pollfd polls;
   printf("SIGPIPE\n");
-  signal(SIGPIPE, &handup);
-  signal(SIGINT, &handler);
   polls.fd = 0;
 	polls.events = POLLERR | POLLHUP;
 	polls.revents = 0;
@@ -210,6 +210,7 @@ void handup(int sig)
       restart_thr(i);
     }
   }
+  return 0;
 }
 
 
@@ -234,9 +235,28 @@ void add_threads(int cnt)
 int server_work()
 {
 	int i = 0;
-	connected = 0;
-    	
-   	sock_id = socket(PF_INET, SOCK_STREAM, 0);
+  struct sigaction forpipe;
+	struct sigaction sigint;
+  sigset_t   set; 
+  sigemptyset(&set);  
+  connected = 0;
+  
+  
+  forpipe.sa_sigaction = NULL;
+  forpipe.sa_handler = &handup;
+	forpipe.sa_mask = set;
+	forpipe.sa_flags = 0;
+  
+  sigaction(SIGPIPE, &forpipe, NULL);
+  
+  sigint.sa_sigaction = NULL;
+  sigint.sa_handler = &handler;
+	sigint.sa_mask = set;
+	sigint.sa_flags = 0;
+  
+  
+    
+  sock_id = socket(PF_INET, SOCK_STREAM, 0);
 	server_addr.sin_family = AF_INET;
 	server_addr.sin_port = htons((short)port_num);
 	server_addr.sin_addr.s_addr = INADDR_ANY;
@@ -246,8 +266,7 @@ int server_work()
 		err_report("Fail to bind", 0);
        	return 2;
    	}
-   	signal(SIGINT, &handler);
-    signal(SIGPIPE, &handup);
+    sigaction(SIGINT, &sigint, NULL);
    	listen(sock_id, MAGIC_CONST);
    	
 	for (i = 0; i < MUTEX_CNT; ++i)

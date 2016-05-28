@@ -1,3 +1,9 @@
+
+
+int player_handler(int sig);
+
+int host_handler(int sig);
+
 void mapClone(struct steam* ptr)
 {
     int i, j, x, y, l;
@@ -57,18 +63,20 @@ void mapClone(struct steam* ptr)
                    }
             if (flag) break;
           }
-        if (flag == 0)
-        {
+          
+          player_arr[ptr->pl[l]].status = ST_ALIVE;
+          player_arr[ptr->pl[l]].hp = initial_health;
+          player_arr[ptr->pl[l]].minecnt = 6;
+          player_arr[ptr->pl[l]].minecd = 0;
+          player_arr[ptr->pl[l]].guncd = 0;
+          
+          if (flag == 0)
+          {
             for (i = l; i < ptr->pl_cnt; ++i)
                 player_arr[ptr->pl[i]].status = ST_DEAD;
             break;            
-        }
-      player_arr[ptr->pl[l]].status = ST_ALIVE;
-	    player_arr[ptr->pl[l]].hp = initial_health;
-	    player_arr[ptr->pl[l]].minecnt = 6;
-	    player_arr[ptr->pl[l]].minecd = moratory_duration;
-	    player_arr[ptr->pl[l]].guncd = moratory_duration;
-    }
+          }
+     }
 }
 
 void mapSend(struct steam* ptr,int fd, int x, int y)
@@ -94,9 +102,32 @@ void mapSend(struct steam* ptr,int fd, int x, int y)
             pthread_mutex_unlock(&(ptr->map_mutex[i]));
         }
         msg_send(fd, MSG_MAP_STRING, 21, buf);
-    }    
+    }
+    free(buf);
 }
-void disconnect(struct sthread* ptr){}
+void disconnect(struct sthread* ptr)
+{
+  int i, pl;
+  if (ptr->type == T_PLAYER)
+  {
+    pl = ptr->pl;
+    player_arr[pl].status = ST_DEAD;
+  } else 
+  {
+    for (i = 0; i < team_arr[ptr->team_id].pl_cnt; ++i)
+    {
+      pl = team_arr[ptr->team_id].pl[i];
+      if (player_arr[pl].status == ST_ALIVE)
+      {
+        msg_send(sthreads[player_arr[pl].thread_id].desc, MSG_INFO_STRING, strlen(disc) + 1, (void*)disc);
+        player_arr[pl].status = ST_DEAD;
+        pthread_kill(plthread[player_arr[pl].thread_id], SIGUSR1);
+      }
+    }
+    team_arr[ptr->team_id].status = ST_ENDG;
+  }
+
+}
 
 void setSend(int fd){
     msg_send(fd, MSG_INFO_STRING, strlen(set_send) + 1, (void*)set_send);
@@ -111,10 +142,13 @@ void setSend(int fd){
 
 void wakeSign(int team_id){
     int i, n;
+    printf("waking\n");
     n = team_arr[team_id].pl_cnt;
     for (i = 0; i < n; ++i)
     {
-        pthread_kill(plthread[player_arr[team_arr[team_id].pl[i]].thread_id], SIGUSR1);
+        printf("%d \n",player_arr[team_arr[team_id].pl[i]].thread_id);
+        if (player_arr[team_arr[team_id].pl[i]].status == ST_ALIVE)
+          pthread_kill(plthread[player_arr[team_arr[team_id].pl[i]].thread_id], SIGUSR1);
     }
 }
 
@@ -124,7 +158,8 @@ void wakeCond(int team_id)
     n = team_arr[team_id].pl_cnt;
     for (i = 0; i < n; ++i)
     {
-        pthread_cond_signal(&sthreads[player_arr[team_arr[team_id].pl[i]].thread_id].cond);
+        if (player_arr[team_arr[team_id].pl[i]].status == ST_ALIVE)
+          pthread_cond_signal(&sthreads[player_arr[team_arr[team_id].pl[i]].thread_id].cond);
     }   
 }
 
@@ -137,6 +172,15 @@ int add_player(int fd, int team_id, int thread_id)
   int i;
 	size_t size = 0;
 	void* buf = NULL;
+  struct sigaction sigpl;  
+  sigset_t   set; 
+  sigemptyset(&set);
+  sigpl.sa_sigaction = NULL;
+  sigpl.sa_handler = &player_handler;
+	sigpl.sa_mask = set;
+	sigpl.sa_flags = 0;
+  
+  sigaction(SIGUSR1, &sigpl, NULL);
 	pthread_mutex_lock(&mutex[3]);
 	if (players_cnt + 1 >= player_arr_size)
 	{
@@ -172,6 +216,15 @@ int add_team(int fd, int tid)
 	int ret = 0; 
 	size_t size = 0;
 	void* buf = NULL;
+  struct sigaction sighst;  
+  sigset_t   set; 
+  sigemptyset(&set);
+  sighst.sa_sigaction = NULL;
+  sighst.sa_handler = &host_handler;
+	sighst.sa_mask = set;
+	sighst.sa_flags = 0;
+  
+  sigaction(SIGUSR2, &sighst, NULL);
 	pthread_mutex_lock(&mutex[2]);
 	if (teams_cnt + 1 >= team_arr_size)
 	{

@@ -3,14 +3,11 @@
 extern void err_report(const char* str, short flag);
 extern void free_mem();*/
 
-void host_handler(int sig){
+int host_handler(int sig){
     printf("SIGUSR2 catched\n");
-    signal(SIGUSR2, &host_handler);
+    return 0;
 }
 
-void teamInit(struct sthread* ptr){
-	
-}
 
 void hostPlSend(struct sthread* ptr){
 	msg_send(ptr->desc, MSG_HOST_PL, sizeof(int), &team_arr[ptr->team_id].pl_cnt);	
@@ -29,7 +26,6 @@ void team_gameplay(struct sthread* ptr){
     void* buf = NULL;
     
     printf("Team_game\n");
-    signal(SIGUSR2, &host_handler);
     polls.fd = ptr->desc;
     polls.events = POLLIN | POLLERR | POLLHUP;
     polls.revents = 0;
@@ -63,6 +59,8 @@ void team_gameplay(struct sthread* ptr){
           }
           if (type == MSG_INFO_STRING && !strcmp((char*)buf,disc))
           {
+            free(buf);
+            buf = NULL;
             disconnect(ptr);	
             return;
           }
@@ -73,24 +71,14 @@ void team_gameplay(struct sthread* ptr){
     }
 	polls.revents = 0; 
   mapClone(&team_arr[ptr->team_id]);
-	teamInit(ptr);
 	wakeSign(ptr->team_id);
 	pause();
 	wakeCond(ptr->team_id);
-    msg_send(ptr->desc, MSG_INFO_STRING, strlen(start) + 1, start);
+  msg_send(ptr->desc, MSG_INFO_STRING, strlen(start) + 1, start);
 	msg_ret = clock_gettime(CLOCK_MONOTONIC, &team_arr[ptr->team_id].start);
     flag = 1;
     while (flag){
         poll_ret = poll(&polls, 1, -1);
-        pthread_mutex_lock(&team_arr[ptr->team_id].mutex);
-            if (team_arr[ptr->team_id].status == ST_ENDG)
-            {
-                flag = 0;
-                msg_send(ptr->desc, MSG_INFO_STRING, strlen(disc) + 1, disc);
-                pthread_mutex_unlock(&team_arr[ptr->team_id].mutex);
-                continue;
-            }
-        pthread_mutex_unlock(&team_arr[ptr->team_id].mutex);
         if (poll_ret == -1)
         {
             err_report("signal caught\n", 1);
@@ -102,7 +90,7 @@ void team_gameplay(struct sthread* ptr){
         if (polls.revents & POLLHUP) {
             err_report("poll returned POLLHUP\n", 0);
             return;
-		}
+        }
         
         if (polls.revents & POLLIN){
             msg_ret = msg_rec(ptr->desc, &type, &size, &buf);
@@ -112,5 +100,6 @@ void team_gameplay(struct sthread* ptr){
     	}
       polls.revents = 0;   
     }
+    free(buf);
     disconnect(ptr);
 }

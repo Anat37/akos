@@ -24,7 +24,7 @@
 #include <sys/timerfd.h>
 #include <unistd.h>
 
-#define DEF_PORT 12005
+#define DEF_PORT 12010
 
 
 #define OBJ_MAP 501

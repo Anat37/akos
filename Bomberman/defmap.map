@@ -15,10 +15,10 @@ Map 10x20
 initial_health = 500
 hit_value      = 50
 recharge_duration = 3
-mining_time = 6
-stay_health_drop = 0.01
-movement_health_drop = 4
-step_standard_delay = 3
+mining_time = 3
+stay_health_drop = 0.001
+movement_health_drop = 0.04
+step_standard_delay = 1
 moratory_duration = 5
 
 items:
