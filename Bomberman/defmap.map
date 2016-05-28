@@ -16,12 +16,12 @@ initial_health = 500
 hit_value      = 50
 recharge_duration = 3
 mining_time = 6
-stay_health_drop = 1
+stay_health_drop = 0.01
 movement_health_drop = 4
-step_standard_delay = 0.1
+step_standard_delay = 3
 moratory_duration = 5
 
 items:
 1 1 10
-20 20 -10
+3 3 -10
 2 3  8

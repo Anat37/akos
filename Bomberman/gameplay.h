@@ -18,41 +18,52 @@ void mapClone(struct steam* ptr)
     }
     for (i = 0; i < mobjectscnt; ++i)
     {
+        printf("object %d \n", i);
+        printf("%d %d %d\n",mobjects[i].x,  mobjects[i].y,  mobjects[i].arg);
         ptr->objects[mobjects[i].x][mobjects[i].y].arg = mobjects[i].arg;
         ptr->objects[mobjects[i].x][mobjects[i].y].type = mobjects[i].type;
         ptr->map[mobjects[i].x][mobjects[i].y] = '+';
+        printf("Compl\n");
     }
-    for (l = 0; l < ptr->max_pl_cnt; ++l)
+    for (l = 0; l < ptr->pl_cnt; ++l)
     {
         x = rand() % map_size_n;
         y = rand() % map_size_m;
         flag = 0;
         for (i = x; i < map_size_n; ++i)
+        {
             for(j = y; j < map_size_m; ++j)
-                if (ptr->map[i][j] == '*')
+                if (ptr->map[i][j] == ' ')
                 {
                     player_arr[ptr->pl[l]].x = i;
                     player_arr[ptr->pl[l]].y = j;
                     ptr->map[i][j] = '@';
                     flag = 1;
+                    break;
                 }
+          if (flag) break;
+        }        
         if (flag == 0)
            for (i = 0; i < map_size_n; ++i)
+           {
                for(j = 0; j < map_size_m; ++j)
-                   if (ptr->map[i][j] == '*')
+                   if (ptr->map[i][j] == ' ')
                    {
                        player_arr[ptr->pl[l]].x = i;
                        player_arr[ptr->pl[l]].y = j;
                        ptr->map[i][j] = '@';
                        flag = 1;
+                       break;
                    }
+            if (flag) break;
+          }
         if (flag == 0)
         {
-            for (i = l; i < ptr->max_pl_cnt; ++i)
+            for (i = l; i < ptr->pl_cnt; ++i)
                 player_arr[ptr->pl[i]].status = ST_DEAD;
             break;            
         }
-        player_arr[ptr->pl[l]].status = ST_ALIVE;
+      player_arr[ptr->pl[l]].status = ST_ALIVE;
 	    player_arr[ptr->pl[l]].hp = initial_health;
 	    player_arr[ptr->pl[l]].minecnt = 6;
 	    player_arr[ptr->pl[l]].minecd = moratory_duration;
@@ -70,7 +81,7 @@ void mapSend(struct steam* ptr,int fd, int x, int y)
     msg_send(fd, MSG_INFO_STRING, strlen(wait_str) + 1, wait_str);
     for (i = x - 10; i < x + 10; ++i)
     {
-        if (i > map_size_n || i < 0){
+        if (i >= map_size_n || i < 0){
             strcpy(buf, str);
         } else {
             pthread_mutex_lock(&(ptr->map_mutex[i]));
@@ -88,7 +99,7 @@ void mapSend(struct steam* ptr,int fd, int x, int y)
 void disconnect(struct sthread* ptr){}
 
 void setSend(int fd){
-    msg_send(fd, MSG_INFO_STRING, sizeof(set_send) + 1, (void*)&set_send);
+    msg_send(fd, MSG_INFO_STRING, strlen(set_send) + 1, (void*)set_send);
     msg_send(fd, MSG_SET_NUM, sizeof(float), (void*)&hit_value);
     msg_send(fd, MSG_SET_NUM, sizeof(int), (void*)&recharge_duration);
     msg_send(fd, MSG_SET_NUM, sizeof(int), (void*)&mining_time);
@@ -103,7 +114,7 @@ void wakeSign(int team_id){
     n = team_arr[team_id].pl_cnt;
     for (i = 0; i < n; ++i)
     {
-        pthread_kill(plthread[player_arr[team_arr[team_id].pl[i]].thread_id],SIGUSR1);
+        pthread_kill(plthread[player_arr[team_arr[team_id].pl[i]].thread_id], SIGUSR1);
     }
 }
 
@@ -119,7 +130,7 @@ void wakeCond(int team_id)
 
 
 
-int add_player(int fd, int team_id)
+int add_player(int fd, int team_id, int thread_id)
 {
 	int type = 0;
 	int ret = 0;
@@ -141,6 +152,7 @@ int add_player(int fd, int team_id)
 	if (ret != 0)
 		return ret;
 	player_arr[players_cnt].name = (char*) buf;
+  player_arr[players_cnt].thread_id = thread_id;
 	team_arr[team_id].pl[team_arr[team_id].pl_cnt] = players_cnt;
 	++team_arr[team_id].pl_cnt;
 	if (team_arr[team_id].pl_cnt == team_arr[team_id].max_pl_cnt)
@@ -193,7 +205,7 @@ int add_team(int fd, int tid)
 	if (ret != 0)
 		return ret;
 	team_arr[teams_cnt].name = (char*) buf;
-	buf = NULL;	
+	buf = NULL;
   ++teams_cnt;
 	return ret;
 }

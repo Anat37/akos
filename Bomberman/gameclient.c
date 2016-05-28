@@ -18,6 +18,7 @@ volatile struct timespec lastmove;
 volatile struct timespec frstart; 
 volatile int x;
 volatile int y;
+int mode = 0;
 	
 
 char** map = NULL;
@@ -31,7 +32,7 @@ void err_report(const char* str, short flag)	/*flag for system call error*/
 }
 
 
-
+void handlerTerm(int sig);
 
 
 void options(int argc, char* argv[])
@@ -62,13 +63,12 @@ void init_me()
 {
 	int i;
 	int msg_ret;
-	int type;
-	size_t size;
+	int type = 0;
+	size_t size = 0;
 	void* buf = NULL;
 	int teams_cnt = 0;
-	int status;
-	short flag = 1;
-	FILE* fstr;
+	int status = -1;
+  int flag = 1;
   printf("Initing\n");
 	msg_ret = msg_rec(sock_id, &type, &size, &buf);
 	if (type == MSG_INFO_STRING && !strcmp((char*) buf ,conn_err)){
@@ -104,53 +104,36 @@ void init_me()
 		scanf("%d", &status);
 		if (status >= teams_cnt || status < -1)
 		{
-			printf("Invalid value, try again");
+			printf("Invalid value, try again\n");
 		}
 			else flag = 0;
 	}
-	if (!teams_cnt)
-		status = -1;
 	msg_send(sock_id, MSG_INFO_NUM, sizeof(int), (void*)&status);
-	fstr = fdopen(0, "r");
-	flag = 1;
+  buf = malloc(80*sizeof(char));
 	if (status == -1)
 	{
 		cltype = 2;
-		while(flag)
-		{
-			printf("Please enter your room name(no more than 60 symbols):");
-			safe_gets(fstr, &buf);
-			if (strlen(buf) > 60)
-				printf("Please enter shorter name\n");
-			else flag = 0;
-		}
-		flag = 1;
-		while(flag)
-		{
-			printf("Please enter maximum number of players:");
-			scanf("%d", &teams_cnt);
-			if (teams_cnt < 0)
-				printf("Please enter valid number\n");
-			else flag = 0;
-		}
+    printf("Enter smth\n");
+    fgets(buf, 60, stdin);
+		printf("Please enter your room name(no more than 60 symbols):");
+		fgets(buf, 60, stdin);
+    printf("Please enter maximum number of players:");
+    scanf("%d", &teams_cnt);
+    
 		msg_send(sock_id, MSG_INFO_NUM, sizeof(int), (void*)&teams_cnt);
 	}
 	else 
 	{
 		cltype = 1;
-		while(flag)
-		{
-			printf("Please enter your player name(no more than 60 symbols):");
-			safe_gets(fstr, &buf);
-			if (strlen(buf) > 60)
-				printf("Please enter shorter name\n");
-			else flag = 0;
-		}
+    printf("Enter smth\n");
+    fgets(buf, 60, stdin);
+		printf("Please enter your player name(no more than 60 symbols):");
+    fgets(buf, 60, stdin);
 	}
-	msg_send(sock_id, MSG_INFO_STRING, strlen(buf) + 1, (void*)buf);
+  fflush(stdin);
+	msg_send(sock_id, MSG_INFO_STRING, strlen((char*)buf) + 1, (void*)buf);
 	map = malloc(21*sizeof(char*));
   printf("End INIt\n");
-	fclose(fstr);
 	free(buf);
 	return;
 }
@@ -160,16 +143,17 @@ void mapRec()
     int i;
     int readed = 0;
 	int ret;
-	int type;
-	size_t size;
+	int type = 0;
+	size_t size = 0;
     for (i = 0; i < 20; ++i)
     {
 		ret = msg_rec(sock_id, &type, &size, (void**)&map[i]);
-    }    
+    } 
+    reprint();
 }
 void setRec(){
-	int type;
-	size_t size;
+	int type = 0;
+	size_t size = 0;
 	void* buf = NULL;
     msg_rec(sock_id, &type, &size, (void**)&buf);
 	hit_value = *((float*)buf);
@@ -185,11 +169,12 @@ void setRec(){
     step_standard_delay = *((int*)buf);
 	msg_rec(sock_id, &type, &size, (void**)&buf);
 	moratory_duration = *((int*)buf);
+  free(buf);
 }
 
 void statRec(){
-	int type;
-	size_t size;
+	int type = 0;
+	size_t size = 0;
 	void* buf = NULL;
     msg_rec(sock_id, &type, &size, (void**)&buf);
 	x = *((int*)buf);
@@ -197,20 +182,37 @@ void statRec(){
 	y = *((int*)buf);
     msg_rec(sock_id, &type, &size, (void**)&buf);
     hp = *((float*)buf);
+    printf("hppppppppppppppppppppppppppppppppppppppppppppppp: %f\n", hp);
+    fflush(stdout);
 	msg_rec(sock_id, &type, &size, (void**)&buf);
     minecnt = *((int*)buf);
 	msg_rec(sock_id, &type, &size, (void**)&buf);
     minecd = *((int*)buf);
 	msg_rec(sock_id, &type, &size, (void**)&buf);
     guncd = *((int*)buf);
+  free(buf);
+  reprint();
 }
 
-void init_game(){
+void init_game()
+{
+  int i =0;
+  int type = 0;
+	size_t size = 0;
+	void* buf = NULL;
+  msg_rec(sock_id, &type, &size, (void**)&buf);
 	setRec();
+  for (i = 0; i < 20; ++i)
+    map[i] = NULL;
+  msg_rec(sock_id, &type, &size, (void**)&buf);
 	mapRec();
+  msg_rec(sock_id, &type, &size, (void**)&buf);
 	statRec();
+  free(buf);
 }
-void handler(int sig){
+void handler(int sig)
+{
+  if (mode) to_canonical();
 	close(sock_id);
 	exit(0);
 }
@@ -218,13 +220,14 @@ void dec_health(uint64_t k){
     minecd -= k * step_standard_delay;
     guncd -= k * step_standard_delay;
     hp -= stay_health_drop * k;
+    reprint();
     if (hp < 0)
     {
         status = ST_DEAD;
         msg_send(sock_id, MSG_INFO_STRING, strlen(ch_st) + 1, (void*)ch_st);
         return;
     }
-	reprint();
+	
 }
 
 void rec_pkg(char* str){
@@ -241,6 +244,7 @@ void rec_pkg(char* str){
 	if (!strcmp(str, st_send))
     {
         statRec();
+        printf("Status Rec\n");
         return ;
     }
 	if (!strcmp(str, disc))
@@ -255,80 +259,112 @@ void player_game(){
 	int poll_ret;
     int flag = 1;
     struct pollfd polls[3];
-    size_t size;
-    int type;
-	uint64_t num;
+    size_t size = 0;
+    int type = 0;
+	uint64_t num = 0;
     int msg_ret = 0;
     void* buf = NULL;
 	struct itimerspec isp;
-    polls[0].fd = 0;
+  polls[0].fd = STDIN_FILENO;
 	polls[0].events = POLLIN | POLLERR | POLLHUP;
 	polls[0].revents = 0;
 	polls[1].fd = sock_id;
 	polls[1].events = POLLIN | POLLERR | POLLHUP;
 	polls[1].revents = 0;
-	polls[2].fd = timerfd_create(CLOCK_MONOTONIC, O_NONBLOCK);
 	polls[2].events = POLLIN | POLLERR | POLLHUP;
 	polls[2].revents = 0;
 	isp.it_interval.tv_sec = step_standard_delay/1000;  
-	isp.it_interval.tv_sec = (step_standard_delay%1000) * 1000000;
-    isp.it_value.tv_sec = 0; 
-	isp.it_value.tv_sec = 1;
+	isp.it_interval.tv_nsec =(step_standard_delay%1000) * 1000000;
+  isp.it_value.tv_sec = 0; 
+	isp.it_value.tv_nsec = 1;
+  init_game();
+  polls[2].fd = timerfd_create(CLOCK_MONOTONIC, 0);
+  if (polls[2].fd < 0)
+    err_report("timer settime fail\n", 1);
+    
 	msg_ret = msg_rec(sock_id, &type, &size, &buf);
-	msg_ret = clock_gettime(CLOCK_MONOTONIC, &lastmove);
-    msg_ret = clock_gettime(CLOCK_MONOTONIC, &frstart);
+    if (strcmp((char*)buf, start))
+    {
+      printf("watch it\n");
+      pause();
+    }  
+  msg_ret = clock_gettime(CLOCK_MONOTONIC, &lastmove);
+  msg_ret = clock_gettime(CLOCK_MONOTONIC, &frstart);
 	msg_ret = timerfd_settime(polls[2].fd, 0, &isp, NULL);
-    while (flag){
-        poll_ret = poll(polls, 3, -1);
-		if (poll_ret == -1)
-        {
-            err_report("poll failed\n", 1);
-            handler(SIGINT);
-        }
-        if (polls[0].revents & POLLERR || polls[1].revents & POLLERR || polls[2].revents & POLLERR) {
-            err_report("poll returned POLLERR\n", 0);
-            handler(SIGINT);
-        }
-        if (polls[0].revents & POLLHUP || polls[1].revents & POLLHUP || polls[2].revents & POLLERR) {
-            err_report("poll returned POLLHUP\n", 0);
-            handler(SIGINT);
-        }
-		if (polls[2].revents & POLLIN){
-			read(polls[2].fd, sizeof(uint64_t), (void*)&num);
-			dec_health(num);
-			polls[2].revents = 0;
-		}
-        if (polls[1].revents & POLLIN){
-            msg_ret = msg_rec(sock_id, &type, &size, &buf);
-            if (type == MSG_INFO_STRING){
-				rec_pkg(buf);
-			}
-			reprint();
-			polls[1].revents = 0;
-        }
-		if (polls[0].revents & POLLIN){
-			user_input(cltype);
-			reprint();
-			polls[0].revents = 0; 
-		}
-		if (status == ST_DEAD)
-		{
-			printf("Game Over");
-			flag = 0;
-			handler(SIGINT);
-		}
+  if (msg_ret == -1)
+    err_report("timer settime fail\n", 1);
+  reprint();
+  while (flag)
+  {
+    poll_ret = poll(polls, 3, -1);
+    if (poll_ret == -1)
+    {
+      err_report("poll failed\n", 1);
+      handler(SIGINT);
+    }
+      
+    if (polls[0].revents & POLLERR || polls[1].revents & POLLERR || polls[2].revents & POLLERR) 
+    {
+      err_report("poll returned POLLERR\n", 0);
+      handler(SIGINT);
+    }
+      
+    if (polls[0].revents & POLLHUP || polls[1].revents & POLLHUP || polls[2].revents & POLLHUP) 
+    {
+      err_report("poll returned POLLHUP\n", 0);
+      handler(SIGINT);
+    }
+
+    if (polls[2].revents & POLLIN)
+    {
+      read(polls[2].fd, (void*)&num, sizeof(uint64_t));
+      dec_health(num);
+      printf("That is the time!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+      polls[2].revents = 0;
+    }
+     
+    if (polls[1].revents & POLLIN)
+    {
+      polls[1].revents = 0;
+      msg_ret = msg_rec(sock_id, &type, &size, &buf);
+      if (type == MSG_INFO_STRING)
+      {
+        rec_pkg(buf);
         
+      }
+			
+      if (status == ST_DEAD)
+      {
+        printf("Game Over");
+        flag = 0;
+        handler(SIGINT);
+      }
+    }
+      
+    if (polls[0].revents & POLLIN)
+    {
+      user_input(cltype);
+      polls[0].revents = 0; 
+    }
+    
+    if (status == ST_DEAD)
+    {
+      printf("Game Over");
+      flag = 0;
+      handler(SIGINT);
+    }
+       
 	}
 }
 void player_wait(){
 	int poll_ret;
     int flag = 1;
     struct pollfd polls[3];
-    size_t size;
-    int type;
+    size_t size = 0;
+    int type = 0;
     int msg_ret = 0;
     void* buf = NULL;
-    polls[0].fd = 0;
+    polls[0].fd = STDIN_FILENO;
 	polls[0].events = POLLIN | POLLERR | POLLHUP;
 	polls[0].revents = 0;
 	polls[1].fd = sock_id;
@@ -353,8 +389,9 @@ void player_wait(){
         if (polls[1].revents & POLLIN){
             msg_ret = msg_rec(sock_id, &type, &size, &buf);
             if (type == MSG_INFO_STRING && !strcmp((char*)buf,start)){
-				init_game();
 				flag = 0;
+        printf("Starting\n");
+        fflush(stdout);
 				continue;
 			}
         }
@@ -372,27 +409,26 @@ void host_wait(){
 	int poll_ret;
     int flag = 1;
     struct pollfd polls[2];
-    size_t size;
-    int type;
+    size_t size = 0;
+    int type = 0;
     int msg_ret = 0;
     void* buf = NULL;
-    polls[0].fd = 0;
+    polls[0].fd = STDIN_FILENO;
 	polls[0].events = POLLIN | POLLERR | POLLHUP;
 	polls[0].revents = 0;
 	polls[1].fd = sock_id;
 	polls[1].events = POLLIN | POLLERR | POLLHUP;
 	polls[1].revents = 0;
     while (flag)
-    { 
-        printf("Poll wait\n");
+    {
+        printf("POLLIN\n");
         poll_ret = poll(polls, 2, -1);
-        if (poll_ret == -1)
+        printf("POLLOUT\n");
+       if (poll_ret == -1)
         {
             err_report("poll failed\n", 1);
             handler(SIGINT);
         }
-        if (polls[0].revents == 0)
-          printf("prost");
         if (polls[0].revents & POLLERR || polls[1].revents & POLLERR) {
             err_report("poll returned POLLERR\n", 0);
             handler(SIGINT);
@@ -408,14 +444,16 @@ void host_wait(){
             }
             printf("MSG rec\n");
         }
-        if (polls[0].revents & POLLPRI)
+        if (polls[0].revents & POLLIN)
         {
           printf("stdin\n");
           user_input(cltype);
           if (game_status == 1){
-				msg_send(sock_id, MSG_INFO_STRING, strlen(start) + 1, (void*)start);	
+            msg_send(sock_id, MSG_INFO_STRING, strlen(start) + 1, (void*)start);	
+            game_status++;
           }
         }
+        
         polls[1].revents = 0;
         polls[0].revents = 0; 
 	}
@@ -439,9 +477,11 @@ int main(int argc, char* argv[])
        	return -2;
    	}
 	signal(SIGINT, &handler);
+  signal(SIGWINCH, &handlerTerm);
 	printf("ok\n");
 	init_me();
 	to_noncanonical();
+  mode = 1;
 	if (cltype == 1)
 		player_wait();
 	else
@@ -449,7 +489,8 @@ int main(int argc, char* argv[])
    
     printf("\nEND\n");
 	to_canonical();
-    close(sock_id);
+  mode = 0;
+  close(sock_id);
 	return 0;
 }
 
@@ -460,28 +501,28 @@ int main(int argc, char* argv[])
 
 void move(int k)
 {
-	int type;
-	size_t size;
-	void* buf;
+	int type = 0;
+	size_t size = 0;
+	void* buf = NULL;
 	int ret;
 	if (time_from(lastmove) < step_standard_delay || minecd > recharge_duration)
     {
         return;
     }
 	switch (k){
-		case UP:if (map[9][10] == '*' || map[9][10] == '+'){
+		case UP:if (map[9][10] == ' ' || map[9][10] == '+'){
 					msg_send(sock_id, MSG_INFO_STRING, strlen(up_m) + 1, (void*)up_m);
 					ret = msg_rec(sock_id, &type, &size, &buf);}
 				break;
-		case DOWN: if (map[11][10] == '*' || map[11][10] == '+'){
+		case DOWN: if (map[11][10] == ' ' || map[11][10] == '+'){
 					msg_send(sock_id, MSG_INFO_STRING, strlen(dw_m) + 1, (void*)dw_m);
 					ret = msg_rec(sock_id, &type, &size, &buf);}
 					break;
-		case LEFT:if (map[10][9] == '*' || map[10][9] == '+'){
+		case LEFT:if (map[10][9] == ' ' || map[10][9] == '+'){
 					msg_send(sock_id, MSG_INFO_STRING, strlen(lf_m) + 1, (void*)lf_m);
 					ret = msg_rec(sock_id, &type, &size, &buf);} 
 					break;
-		case RIGHT: if (map[10][11] == '*' || map[10][11] == '+'){
+		case RIGHT: if (map[10][11] == ' ' || map[10][11] == '+'){
 					msg_send(sock_id, MSG_INFO_STRING, strlen(rt_m) + 1, (void*)rt_m);
 					ret = msg_rec(sock_id, &type, &size, &buf);}
 					break;
@@ -489,9 +530,9 @@ void move(int k)
 }
 
 void mine(){
-	int type;
-	size_t size;
-	void* buf;
+	int type = 0;
+	size_t size = 0;
+	void* buf = NULL;
 	int ret;
 	if (time_from(lastmove) < step_standard_delay || time_from(frstart) < moratory_duration || minecd > 0)
     {
@@ -502,9 +543,9 @@ void mine(){
 } 
 void use_obj()
 {
-	int type;
-	size_t size;
-	void* buf;
+	int type = 0;
+	size_t size = 0;
+	void* buf = NULL;
 	int ret;
 	if (time_from(lastmove) < step_standard_delay || minecd > recharge_duration)
     {
@@ -514,9 +555,9 @@ void use_obj()
 	ret = msg_rec(sock_id, &type, &size, &buf);
 } 	
 void fireuse(){
-	int type;
-	size_t size;
-	void* buf;
+	int type = 0;
+	size_t size = 0;
+	void* buf = NULL;
 	int ret;
 	if (time_from(lastmove) < step_standard_delay || time_from(frstart) < moratory_duration || guncd > 0 || minecd > recharge_duration)
     {

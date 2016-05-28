@@ -7,7 +7,7 @@ all: gameserver killer gameclient
 gameserver: playerfunc.o hostfunc.o gameserver.o safe_gets.o msg.o
 	$(CC) msg.o gameserver.o -lpthread -lm safe_gets.o playerfunc.o hostfunc.o -o gameserver 
 	
-gameserver.o: gameserver.c header.h serverpart.h daemonbeing.h gameplay.h
+gameserver.o: gameserver.c header.h serverpart.h daemonbeing.h gameplay.h defs.h
 	$(CC) $(CFLAGS) gameserver.c -o gameserver.o 
 	
 playerfunc.o: playerfunc.c header.h
@@ -17,6 +17,8 @@ hostfunc.o: hostfunc.c header.h
 	$(CC) $(CFLAGS) -o hostfunc.o hostfunc.c 
 
 	
+header.h: defs.h
+  
 
 msg.o:msg.c
 	$(CC) $(CFLAGS) -o msg.o msg.c

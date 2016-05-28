@@ -60,18 +60,36 @@ void map_read()
 	str = (char*) malloc(256 * sizeof(char));
 	fscanf(mapf, "\n"); 
 	fscanf(mapf, "%s = %f", str, &initial_health);
+  printf("initial_health set to %f\n",initial_health);
+  
   fscanf(mapf, "%s = %f", str, &hit_value);
+  printf("hit_value set to %f\n",hit_value);
+  
 	fscanf(mapf, "%s = %f", str, &value);
+  printf("recharge_duration set to %f\n",value);
   recharge_duration = roundf(value*1000);
+  
+  
 	fscanf(mapf, "%s = %f", str, &value);
 	mining_time = roundf(value*1000);
+  printf("mining_time set to %f\n",value);
+  
 	fscanf(mapf, "%s = %f", str, &stay_health_drop);
+  printf("stay_health_drop set to %f\n",stay_health_drop);
+  
 	fscanf(mapf, "%s = %f", str, &movement_health_drop);
-	fscanf(mapf, "%s = %f", str, &value);
+	printf("movement_health_drop set to %f\n",movement_health_drop);
+  
+  fscanf(mapf, "%s = %f", str, &value);
 	step_standard_delay  = roundf(value*1000);
-	fscanf(mapf, "%s = %f", str, &value);
+	printf("step_standard_delay set to %d\n",step_standard_delay);
+  
+  
+  fscanf(mapf, "%s = %f", str, &value);
 	moratory_duration =  roundf(value*1000);
-	fscanf(mapf, "\nitems:\n");
+	printf("moratory_duration set to %f\n",value);
+  fscanf(mapf, "\nitems:\n");
+  
   
 	free(str);
 	while (!feof(mapf))

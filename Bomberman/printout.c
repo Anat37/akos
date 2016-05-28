@@ -13,10 +13,14 @@
 
 static struct termios stored_settings;
 
-extern char** map;
-extern int game_status;
-extern int minecnt;
-extern float hp;
+extern volatile char** map;
+extern volatile int game_status;
+extern volatile int minecnt;
+extern volatile float hp;
+volatile int height = 0;
+volatile int width = 0;
+
+
 
 void to_noncanonical()
 {
@@ -40,14 +44,51 @@ void to_canonical()
 	return;
 }
 
+int get_term_size()
+{
+	int rc, fd;
+	struct winsize ws;
+
+    	fd = open( "/dev/tty", O_RDONLY );
+    	if( fd < 0 )
+    	{
+        	perror( "open()" );
+        	return 1;
+    	}
+
+    	rc = ioctl( fd, TIOCGWINSZ, &ws );
+    	if( rc < 0 )
+    	{
+        	perror( "ioctl()" );
+        	return 1;
+    	}
+
+    	width = ws.ws_col;
+    	height =  ws.ws_row;
+	close(fd);
+	return 0;
+} 
+
+void handlerTerm(int sig)
+{
+	if (sig == SIGWINCH)
+	{
+		get_term_size();
+		reprint();
+	}
+	signal(SIGWINCH, &handlerTerm);
+}
 
 void reprint()
 {
 	int i;
 	for (i = 0; i < 20; ++i)
 		printf("%s\n", map[i]);
-	printf("Healthpoints:%d\n", hp);
+	printf("Healthpoints:%f\n", hp);
 	printf("Mines:%d\n", minecnt);
+  for (i = 0; i < height - 23; ++i)
+    printf("\n");
+  fflush(stdout);
 }
 
 #define UP 1
@@ -58,8 +99,7 @@ void user_input(int type)
 {
 	unsigned int symbol;
 	if (type == 1)
-	{
-		reprint();	
+	{	
 		symbol = getchar();
 		
 		switch (symbol){
@@ -76,10 +116,9 @@ void user_input(int type)
 			handler(SIGINT);
 	} else 
 	{
-		reprint();
 		symbol = getchar();
 		if (symbol == 's')
-			game_status = 1;
+			++game_status;
 		if (symbol == 'q')
 			handler(SIGINT);
 		if (symbol == '\004')

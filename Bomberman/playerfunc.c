@@ -6,17 +6,19 @@ extern void err_report(const char* str, short flag);
 extern void free_mem();*/
 
 void player_handler(int sig){
-    
+    printf("Give me a sign!");
+    signal(SIGUSR1, &player_handler);
 }
 
 
 
 void statSend(struct sthread* ptr)
 {
-    msg_send(ptr->desc, MSG_INFO_STRING, sizeof(st_send) + 1 , (void*)&st_send);
+    msg_send(ptr->desc, MSG_INFO_STRING, strlen(st_send) + 1 , (void*)st_send);
     msg_send(ptr->desc, MSG_STAT_NUM, sizeof(int), (void*)&player_arr[ptr->pl].x);
     msg_send(ptr->desc, MSG_STAT_NUM, sizeof(int), (void*)&player_arr[ptr->pl].y);
     msg_send(ptr->desc, MSG_STAT_NUM, sizeof(float), (void*)&player_arr[ptr->pl].hp);
+    printf("Send hp %f\n", player_arr[ptr->pl].hp);
     msg_send(ptr->desc, MSG_STAT_NUM, sizeof(int), (void*)&player_arr[ptr->pl].minecnt);
     msg_send(ptr->desc, MSG_STAT_NUM, sizeof(int), (void*)&player_arr[ptr->pl].minecd);
     msg_send(ptr->desc, MSG_STAT_NUM, sizeof(int), (void*)&player_arr[ptr->pl].guncd);
@@ -42,7 +44,7 @@ void upd_status(struct sthread* ptr){
     if (player_arr[pl].hp < 0)
     {
         player_arr[pl].status = ST_DEAD;
-        team_arr[ptr->team_id].map[player_arr[pl].x][player_arr[pl].y] = '*';
+        team_arr[ptr->team_id].map[player_arr[pl].x][player_arr[pl].y] = ' ';
         return;
     }
     statSend(ptr);
@@ -68,22 +70,22 @@ void bfs(struct sthread* ptr)
     int i, j;
     float l;
     pthread_mutex_lock(&team_arr[ptr->team_id].mutex);
-    if (x + 1 < map_size_n && (map[x+1][y] == '*' || map[x+1][y] == '+'))
+    if (x + 1 < map_size_n && (map[x+1][y] == ' ' || map[x+1][y] == '+'))
         map[x+1][y] = 'F';
     if (x + 1 < map_size_n && (map[x+1][y] == '@'))
         damage(ptr->team_id, x + 1, y, 1);
         
-    if (y + 1 < map_size_m && (map[x][y + 1] == '*' || map[x][y + 1] == '+'))
+    if (y + 1 < map_size_m && (map[x][y + 1] == ' ' || map[x][y + 1] == '+'))
         map[x][y + 1] = 'F';
     if (y + 1 < map_size_m && (map[x][y + 1] == '@'))
         damage(ptr->team_id, x, y + 1, 1);
         
-    if (x - 1 > 0 && (map[x - 1][y] == '*' || map[x - 1][y] == '+'))
+    if (x - 1 > 0 && (map[x - 1][y] == ' ' || map[x - 1][y] == '+'))
         map[x - 1][y] = 'F';
     if (x - 1 > 0 && (map[x - 1][y] == '@'))
         damage(ptr->team_id, x - 1, y, 1);
         
-    if (y - 1 > 0 && (map[x][y - 1] == '*' || map[x][y - 1] == '+'))
+    if (y - 1 > 0 && (map[x][y - 1] == ' ' || map[x][y - 1] == '+'))
         map[x - 1][y] = 'F';
     if (y - 1 > 0 && (map[x][y - 1] == '@'))
         damage(ptr->team_id, x, y - 1, 1);
@@ -98,7 +100,7 @@ void bfs(struct sthread* ptr)
                     (i - 1 > 0 && map[i - 1][j] == 'F') ||
                     (j - 1 > 0 && map[i][j - 1] == 'F') )
                     {
-                        if (map[i][j] == '*' || map[i][j] == '+')
+                        if (map[i][j] == ' ' || map[i][j] == '+')
                             map[i][j] = 'F';
                         if (map[i][j] == '@')
                             damage(ptr->team_id, i, j, l);
@@ -111,7 +113,7 @@ void bfs(struct sthread* ptr)
                     if (team_arr[ptr->team_id].objects[i][j].type == OBJ_MAP)
                         map[i][j] = '+';
                     else
-                        map[i][j] = '*';
+                        map[i][j] = ' ';
             } 
     pthread_mutex_unlock(&team_arr[ptr->team_id].mutex);            
 }
@@ -122,7 +124,7 @@ void move(struct sthread* ptr, int k){
     int newx = oldx;
     int newy = oldy;
     int pl = ptr->pl;
-    if (time_from(player_arr[ptr->pl].lastmove) < step_standard_delay|| player_arr[pl].minecd > recharge_duration)
+    if (time_from(player_arr[ptr->pl].lastmove) < 1 || player_arr[pl].minecd > recharge_duration)
     {
         msg_send(ptr->desc, MSG_INFO_STRING, strlen(bad_mov) + 1, (void*) bad_mov);
         return;
@@ -138,8 +140,13 @@ void move(struct sthread* ptr, int k){
     pthread_mutex_lock(&team_arr[ptr->team_id].map_mutex[oldx]);
     if (oldx != newx)
         pthread_mutex_lock(&team_arr[ptr->team_id].map_mutex[newx]);
-        if (team_arr[ptr->team_id].map[newx][newy] == '*' || team_arr[ptr->team_id].map[newx][newy] == '+')
+        if (team_arr[ptr->team_id].map[newx][newy] == ' ' || team_arr[ptr->team_id].map[newx][newy] == '+')
         {
+            team_arr[ptr->team_id].map[newx][newy] = '@';
+            if (team_arr[ptr->team_id].objects[oldx][oldy].type == OBJ_MAP)
+              team_arr[ptr->team_id].map[oldx][oldy] = '+';
+            else 
+              team_arr[ptr->team_id].map[oldx][oldy] = ' ';
             player_arr[ptr->pl].x = newx;
             player_arr[ptr->pl].y = newy;
             player_arr[ptr->pl].hp -= movement_health_drop - stay_health_drop;
@@ -154,6 +161,7 @@ void move(struct sthread* ptr, int k){
     pthread_mutex_unlock(&team_arr[ptr->team_id].map_mutex[oldx]);
     if (oldx != newx)
         pthread_mutex_unlock(&team_arr[ptr->team_id].map_mutex[newx]);
+    wakeSign(ptr->team_id);
     return;    
 }
 
@@ -161,7 +169,7 @@ void use_object(struct sthread* ptr)
 {
     int pl = ptr->pl;
     int k;
-    if (time_from(player_arr[ptr->pl].lastmove) < step_standard_delay|| player_arr[pl].minecd > recharge_duration)
+    if (time_from(player_arr[ptr->pl].lastmove) < 1|| player_arr[pl].minecd > recharge_duration)
     {
         msg_send(ptr->desc, MSG_INFO_STRING, strlen(bad_mov) + 1, (void*) bad_mov);
         return;
@@ -184,12 +192,12 @@ void put_min(struct sthread* ptr)
 {
     int pl = ptr->pl;
     int k;
-    if (time_from(player_arr[ptr->pl].lastmove) < step_standard_delay || player_arr[pl].minecd > recharge_duration)
+    if (time_from(player_arr[ptr->pl].lastmove) < 1 || player_arr[pl].minecd > recharge_duration)
     {
         msg_send(ptr->desc, MSG_INFO_STRING, strlen(bad_mov) + 1, (void*) bad_mov);
         return;
     }
-    if (time_from(team_arr[ptr->team_id].start) < moratory_duration)
+    if (time_from(team_arr[ptr->team_id].start) < moratory_duration/step_standard_delay)
     {
         msg_send(ptr->desc, MSG_INFO_STRING, strlen(bad_mov) + 1, (void*) bad_mov);
         return;
@@ -216,12 +224,12 @@ void gun_use(struct sthread* ptr)
 {
     int pl = ptr->pl;
     int k;
-    if (time_from(player_arr[ptr->pl].lastmove) < step_standard_delay || player_arr[pl].minecd > recharge_duration)
+    if (time_from(player_arr[ptr->pl].lastmove) < 1 || player_arr[pl].minecd > recharge_duration)
     {
         msg_send(ptr->desc, MSG_INFO_STRING, strlen(bad_mov) + 1, (void*) bad_mov);
         return;
     }
-    if (time_from(team_arr[ptr->team_id].start) < moratory_duration)
+    if (time_from(team_arr[ptr->team_id].start) < moratory_duration/step_standard_delay)
     {
         msg_send(ptr->desc, MSG_INFO_STRING, strlen(bad_mov) + 1, (void*) bad_mov);
         return;
@@ -252,25 +260,21 @@ int pl_move(struct sthread* ptr, char* str){
     if (!strcmp(str, up_m))
     {
         move(ptr, UP);
-        wakeSign(ptr->team_id);
         return 0;
     }
     if (!strcmp(str, dw_m))
     {
         move(ptr, DOWN);
-        wakeSign(ptr->team_id);
         return 0;
     }
     if (!strcmp(str, lf_m))
     {
         move(ptr, LEFT);
-        wakeSign(ptr->team_id);
         return 0;
     }
     if (!strcmp(str, rt_m))
     {
         move(ptr, RIGHT);
-        wakeSign(ptr->team_id);
         return 0;
     }
     if (!strcmp(str, fire))
@@ -306,8 +310,8 @@ void player_gameplay(struct sthread* ptr){
     int poll_ret;
     int flag = 1;
     struct pollfd polls;
-    size_t size;
-    int type;
+    size_t size = 0;
+    int type = 0;
     int msg_ret = 0;
     void* buf = NULL;
     
@@ -318,7 +322,7 @@ void player_gameplay(struct sthread* ptr){
     while (flag){
         poll_ret = poll(&polls, 1, -1);
         pthread_mutex_lock(&team_arr[ptr->team_id].mutex);
-            if (team_arr[ptr->team_id].status = ST_PLAYING)
+            if (team_arr[ptr->team_id].status == ST_PLAYING)
             {
                 flag = 0;
                 pthread_mutex_unlock(&team_arr[ptr->team_id].mutex);
@@ -328,7 +332,6 @@ void player_gameplay(struct sthread* ptr){
         if (poll_ret == -1)
         {
             err_report("poll failed\n", 1);
-            return;
         }
         if (polls.revents & POLLERR) {
             err_report("poll returned POLLERR\n", 0);
@@ -371,19 +374,11 @@ void player_gameplay(struct sthread* ptr){
     flag = 1;
     while (flag){
         poll_ret = poll(&polls, 1, -1);
-        pthread_mutex_lock(&team_arr[ptr->team_id].mutex);
-            if (team_arr[ptr->team_id].status = ST_ENDG)
-            {
-                flag = 0;
-                msg_send(ptr->desc, MSG_INFO_STRING, strlen(disc) + 1, disc);
-                pthread_mutex_unlock(&team_arr[ptr->team_id].mutex);
-                continue;
-            }
-        pthread_mutex_unlock(&team_arr[ptr->team_id].mutex);
+        
         if (poll_ret == -1)
         {
             err_report("poll failed\n", 1);
-            return;
+            
         }
         if (polls.revents & POLLERR) {
             err_report("poll returned POLLERR\n", 0);
@@ -393,8 +388,6 @@ void player_gameplay(struct sthread* ptr){
             err_report("poll returned POLLHUP\n", 0);
             return;
         }
-        upd_status(ptr);
-        
         if (polls.revents & POLLIN){
             msg_ret = msg_rec(ptr->desc, &type, &size, &buf);
             if (type == MSG_INFO_STRING){
@@ -402,12 +395,22 @@ void player_gameplay(struct sthread* ptr){
                     flag = 0;
             }
         }
-        statSend(ptr);
+        printf("End move\n");
+        pthread_mutex_lock(&team_arr[ptr->team_id].mutex);
+            if (team_arr[ptr->team_id].status == ST_ENDG)
+            {
+                flag = 0;
+                msg_send(ptr->desc, MSG_INFO_STRING, strlen(disc) + 1, disc);
+                pthread_mutex_unlock(&team_arr[ptr->team_id].mutex);
+                continue;
+            } else pthread_mutex_unlock(&team_arr[ptr->team_id].mutex);
+        printf("End move\n");
+        upd_status(ptr);
         mapSend(&team_arr[ptr->team_id], ptr->desc, player_arr[ptr->pl].x, player_arr[ptr->pl].y);
         polls.revents = 0;  
-        if (player_arr[ptr->pl].status = ST_DEAD)
+        if (player_arr[ptr->pl].status == ST_DEAD)
         {
-            flag = 0;
+            
         }     
     }
     disconnect(ptr);

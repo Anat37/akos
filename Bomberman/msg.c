@@ -2,9 +2,19 @@
 #include <unistd.h>
 #include <poll.h>
 #include <time.h>
+#include <signal.h>
+#include <stdio.h>
 
 
+#define MSG_INFO_STRING 1
+#define MSG_INFO_NUM 2
 #define MSG_ERR 3
+#define MSG_MAP_W 4
+#define MSG_MAP_STRING 5
+#define MSG_MAP_NUM 6
+#define MSG_STAT_NUM 7
+#define MSG_SET_NUM 8
+#define MSG_HOST_PL 9
 
 extern int step_standard_delay;
 
@@ -18,16 +28,15 @@ void msg_send(int desc, int type, size_t len, void* arg)
   int ret;
   ret = write(desc, (void*)&type, sizeof(int));
   if (ret == sizeof(int))
-    printf("Sended type:%d\n", type);
+    /*printf("Sended type:%d\n", type);*/
 	ret = write(desc, (void*)&len, sizeof(int));
   if (ret == sizeof(int))
-    printf("Sended size:%d\n", len);
+    /*printf("Sended size:%d\n", len);*/
 	ret = write(desc, arg, len);
-  if (ret == len)
-    if (type == 1)
+  if (type == 1 || type == 4 || type == 5)
     printf("Sended buf:%s\n", (char*)arg);
-    else
-    printf("Sended buf:%d\n", *(int*)arg);
+  if (ret != len)
+    printf("problems\n");
 	return; 
 }
 
@@ -53,11 +62,13 @@ int msg_rec(int desc, int* type, size_t* len, void** arg)
 		if (read_ret == 0)
 		{
 			err_report("Connection lost", 0);
+      close(desc);
+      raise(SIGPIPE);
 			return -2;
 		}
 		readed += read_ret;
 	}
-  printf("Received type %d\n", *type);
+  /*printf("Received type %d\n", *type);*/
 	readed = 0;
 	while (readed < sizeof(int))
 	{ 
@@ -73,7 +84,7 @@ int msg_rec(int desc, int* type, size_t* len, void** arg)
 		}
 		readed += read_ret;
 	}
-  printf("Received len %d\n", *len);
+  /*printf("Received len %d\n", *len);*/
 	str = malloc((unsigned int)*len);
 	readed = 0;
 	while (readed < *len)
@@ -90,10 +101,11 @@ int msg_rec(int desc, int* type, size_t* len, void** arg)
 		}
 		readed += read_ret;
 	}
-  if (*type == 1)
-    printf("Received buf %s\n", str);
-  if (*type == 2)
+  if (*type == 1 || *type == 4 || *type == 5)
+    printf("Received buf %s\n", (char*)str);
+  else
     printf("Received buf %d\n", *(int*)str);
+  fflush(stdout);
 	*arg = str;
 	if (*type == MSG_ERR)
 	{

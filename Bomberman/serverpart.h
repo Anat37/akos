@@ -104,13 +104,13 @@ int player_init(struct sthread* ptr)
 	{
 		ptr->type = T_HOST;
 		ptr->team_id = teams_cnt;
-		ret = add_team(fd, ptr->id);	
+		ret = add_team(fd, ptr->id);
 	} else 
 	{
 		ptr->type = T_PLAYER;
 		ptr->team_id = *(int*)buf;
     ptr->pl = players_cnt;
-		ret = add_player(fd, ptr->team_id);
+		ret = add_player(fd, ptr->team_id, ptr->id);
 	}
 	pthread_mutex_unlock(&mutex[1]);
 	return ret; 
@@ -129,7 +129,8 @@ void* playerthread(void* arg)
     pthread_mutex_unlock(&(ptr->mutex));
 		player_init(ptr);
     printf("end init");
-    if (ptr->type = T_PLAYER)
+    fflush(stdout);
+    if (ptr->type == T_PLAYER)
 			player_gameplay(ptr);
 		else 
 			team_gameplay(ptr);
@@ -183,6 +184,7 @@ void handup(int sig)
   struct pollfd polls;
   printf("SIGPIPE\n");
   signal(SIGPIPE, &handup);
+  signal(SIGINT, &handler);
   polls.fd = 0;
 	polls.events = POLLERR | POLLHUP;
 	polls.revents = 0;
@@ -202,6 +204,9 @@ void handup(int sig)
       handler(SIGINT);
     }
     if (polls.revents & POLLHUP) {
+      restart_thr(i);
+    }
+    if (polls.revents & POLLNVAL) {
       restart_thr(i);
     }
   }
@@ -229,7 +234,6 @@ void add_threads(int cnt)
 int server_work()
 {
 	int i = 0;
-  printf("Switch to server\n");
 	connected = 0;
     	
    	sock_id = socket(PF_INET, SOCK_STREAM, 0);
