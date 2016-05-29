@@ -126,7 +126,7 @@ void bfs(struct sthread* ptr)
                         if (map[i][j] == '@')
                             damage(ptr->team_id, i, j, l);
                     }
-            }
+            } 
             
     mapSend(&team_arr[ptr->team_id],ptr->desc,x,y);
     
@@ -307,7 +307,6 @@ int pl_move(struct sthread* ptr, char* str){
     if (!strcmp(str, fire))
     {
         gun_use(ptr);
-        wakeSign(ptr->team_id);
         return 0;
     }
     if (!strcmp(str, put_mine))
@@ -343,7 +342,6 @@ void player_gameplay(struct sthread* ptr){
     void* buf = NULL;
     
     printf("In play game\n");
-    
     polls.fd = ptr->desc;
     polls.events = POLLIN | POLLERR | POLLHUP;
     polls.revents = 0;
@@ -378,7 +376,7 @@ void player_gameplay(struct sthread* ptr){
                 return;
             }
         }
-        polls.revents = 0;       
+        polls.revents = 0;    
     }
     msg_send(ptr->desc, MSG_INFO_STRING, strlen(start) + 1, start);
     setSend(ptr->desc);
@@ -402,8 +400,10 @@ void player_gameplay(struct sthread* ptr){
     msg_ret = clock_gettime(CLOCK_MONOTONIC, &player_arr[ptr->pl].lastmove);
     msg_ret = clock_gettime(CLOCK_MONOTONIC, &player_arr[ptr->pl].lasthp);
     flag = 1;
+    
     while (flag){
         poll_ret = poll(&polls, 1, -1);
+        
         if (poll_ret == -1)
         {
             printf("Caught sig\n");

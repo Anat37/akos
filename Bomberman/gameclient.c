@@ -50,6 +50,7 @@ void options(int argc, char* argv[])
     			case 's':hostname = optarg;
     				break; 
     			case 'h': help_print();
+                  exit(0);
     				break;
         	}	
         }	
@@ -156,20 +157,29 @@ void setRec(){
 	int type = 0;
 	size_t size = 0;
 	void* buf = NULL;
-    msg_rec(sock_id, &type, &size, (void**)&buf);
+  msg_rec(sock_id, &type, &size, (void**)&buf);
 	hit_value = *((float*)buf);
-    msg_rec(sock_id, &type, &size, (void**)&buf);
+  
+  msg_rec(sock_id, &type, &size, (void**)&buf);
 	recharge_duration = *((int*)buf);
-    msg_rec(sock_id, &type, &size, (void**)&buf);
-    mining_time = *((int*)buf);
-	msg_rec(sock_id, &type, &size, (void**)&buf);
-    stay_health_drop = *((float*)buf);
-	msg_rec(sock_id, &type, &size, (void**)&buf);
-    movement_health_drop = *((float*)buf);
-	msg_rec(sock_id, &type, &size, (void**)&buf);
-    step_standard_delay = *((int*)buf);
-	msg_rec(sock_id, &type, &size, (void**)&buf);
+  
+  msg_rec(sock_id, &type, &size, (void**)&buf);
+  mining_time = *((int*)buf);
+	
+  msg_rec(sock_id, &type, &size, (void**)&buf);
+  stay_health_drop = *((float*)buf);
+	
+  msg_rec(sock_id, &type, &size, (void**)&buf);
+  movement_health_drop = *((float*)buf);
+	
+  msg_rec(sock_id, &type, &size, (void**)&buf);
+  step_standard_delay = *((int*)buf);
+	
+  
+  
+  msg_rec(sock_id, &type, &size, (void**)&buf);
 	moratory_duration = *((int*)buf);
+  
   free(buf);
 }
 
@@ -183,7 +193,6 @@ void statRec(){
 	y = *((int*)buf);
     msg_rec(sock_id, &type, &size, (void**)&buf);
     hp = *((float*)buf);
-    printf("hppppppppppppppppppppppppppppppppppppppppppppppp: %f\n", hp);
     fflush(stdout);
 	msg_rec(sock_id, &type, &size, (void**)&buf);
     minecnt = *((int*)buf);
@@ -251,7 +260,6 @@ void rec_pkg(char* str){
 	if (!strcmp(str, st_send))
     {
         statRec();
-        printf("Status Rec\n");
         return ;
     }
 	if (!strcmp(str, disc))
@@ -280,11 +288,13 @@ void player_game(){
 	polls[1].revents = 0;
 	polls[2].events = POLLIN | POLLERR | POLLHUP;
 	polls[2].revents = 0;
-	isp.it_interval.tv_sec = step_standard_delay/1000;  
+  
+	init_game();
+  isp.it_interval.tv_sec = step_standard_delay/1000;  
 	isp.it_interval.tv_nsec =(step_standard_delay%1000) * 1000000;
-  isp.it_value.tv_sec = 0; 
+  isp.it_value.tv_sec = 1; 
 	isp.it_value.tv_nsec = 1;
-  init_game();
+  
   polls[2].fd = timerfd_create(CLOCK_MONOTONIC, 0);
   if (polls[2].fd < 0)
     err_report("timer settime fail\n", 1);
@@ -325,6 +335,7 @@ void player_game(){
     if (polls[2].revents & POLLIN)
     {
       read(polls[2].fd, (void*)&num, sizeof(uint64_t));
+      printf("Timer work");
       dec_health(num);
       polls[2].revents = 0;
     }
@@ -432,9 +443,8 @@ void host_wait(){
 	polls[1].revents = 0;
     while (flag)
     {
-        printf("POLLIN\n");
-        poll_ret = poll(polls, 2, -1);
-        printf("POLLOUT\n");
+       poll_ret = poll(polls, 2, -1);
+      
        if (poll_ret == -1)
         {
             err_report("poll failed\n", 1);
@@ -451,15 +461,13 @@ void host_wait(){
         if (polls[1].revents & POLLIN){
             msg_ret = msg_rec(sock_id, &type, &size, &buf);
             if (type == MSG_HOST_PL){
-              printf("Number of players: %d", *((int*)buf));
+              printf("Number of players: %d\n", *((int*)buf));
               free(buf);
               buf = NULL;
             }
-            printf("MSG rec\n");
         }
         if (polls[0].revents & POLLIN)
         {
-          printf("stdin\n");
           user_input(cltype);
           if (game_status == 1){
             msg_send(sock_id, MSG_INFO_STRING, strlen(start) + 1, (void*)start);	
@@ -484,13 +492,12 @@ int main(int argc, char* argv[])
    	server_addr.sin_port = htons((short)port_num);
    	memcpy(&(server_addr.sin_addr.s_addr), hst->h_addr_list[0], hst->h_length);
    
-   	if (connect(sock_id, (struct sockaddr*)(&server_addr), sizeof(struct sockaddr_in)) == -1)
-   	{
-       	printf("connect fail\n");
-       	return -2;
-   	}
+  if (connect(sock_id, (struct sockaddr*)(&server_addr), sizeof(struct sockaddr_in)) == -1)
+  {
+   	err_report("connect fail\n", 0);
+   	return -2;
+  }
 	signal(SIGINT, &handler);
-	printf("ok\n");
 	init_me();
 	to_noncanonical();
   mode = 1;
@@ -499,7 +506,7 @@ int main(int argc, char* argv[])
 	else
 		host_wait();
    
-    printf("\nEND\n");
+  printf("\nEND\n");
 	to_canonical();
   mode = 0;
   close(sock_id);
@@ -519,23 +526,23 @@ void move(int k)
 	int ret;
 	if (time_from(lastmove) < 1 || minecd > recharge_duration)
     {
-        printf("Not this time!\n");
+        printf("To fast\n");
         return;
     }
 	switch (k){
-		case UP:if (map[9][10] == ' ' || map[9][10] == '+'){
+		case UP:if (map[9][10] == ' ' || map[9][10] == '+' || map[9][10] == 'F'){
 					msg_send(sock_id, MSG_INFO_STRING, strlen(up_m) + 1, (void*)up_m);
 					ret = msg_rec(sock_id, &type, &size, &buf);}
 				break;
-		case DOWN: if (map[11][10] == ' ' || map[11][10] == '+'){
+		case DOWN: if (map[11][10] == ' ' || map[11][10] == '+' || map[11][10] == 'F'){
 					msg_send(sock_id, MSG_INFO_STRING, strlen(dw_m) + 1, (void*)dw_m);
 					ret = msg_rec(sock_id, &type, &size, &buf);}
 					break;
-		case LEFT:if (map[10][9] == ' ' || map[10][9] == '+'){
+		case LEFT:if (map[10][9] == ' ' || map[10][9] == '+' || map[10][9] == 'F'){
 					msg_send(sock_id, MSG_INFO_STRING, strlen(lf_m) + 1, (void*)lf_m);
 					ret = msg_rec(sock_id, &type, &size, &buf);} 
 					break;
-		case RIGHT: if (map[10][11] == ' ' || map[10][11] == '+'){
+		case RIGHT: if (map[10][11] == ' ' || map[10][11] == '+' || map[10][11] == 'F'){
 					msg_send(sock_id, MSG_INFO_STRING, strlen(rt_m) + 1, (void*)rt_m);
 					ret = msg_rec(sock_id, &type, &size, &buf);}
 					break;
@@ -551,7 +558,8 @@ void mine(){
 	int ret;
 	if (time_from(lastmove) < 1 || time_from(frstart) < moratory_duration/step_standard_delay || minecd > 0)
     {
-        return;
+      printf("To fast\n");
+      return;
     }
 	msg_send(sock_id, MSG_INFO_STRING, strlen(put_mine) + 1, (void*)put_mine);
 	ret = msg_rec(sock_id, &type, &size, &buf);
@@ -565,6 +573,7 @@ void use_obj()
 	int ret;
 	if (time_from(lastmove) < 1 || minecd > recharge_duration)
     {
+        printf("To fast\n");
         return;
     }
 	msg_send(sock_id, MSG_INFO_STRING, strlen(us_ob) + 1, (void*)us_ob);
@@ -578,6 +587,7 @@ void fireuse(){
 	int ret;
 	if (time_from(lastmove) < 1 || time_from(frstart) < moratory_duration/step_standard_delay || guncd > 0 || minecd > recharge_duration)
     {
+        printf("To fast\n");
         return;
     }
 	msg_send(sock_id, MSG_INFO_STRING, strlen(fire) + 1, (void*)fire);

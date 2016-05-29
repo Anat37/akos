@@ -88,7 +88,6 @@ int player_init(struct sthread* ptr)
 	
   pthread_mutex_lock(&mutex[1]);
 	msg_send(fd, MSG_INFO_NUM, sizeof(int), (void*)&teams_cnt);
-  
 	for (i = 0; i < teams_cnt; ++i)
 	{
 		msg_send(fd, MSG_INFO_STRING, strlen(team_arr[i].name) + 1, (void*) team_arr[i].name);
@@ -112,6 +111,7 @@ int player_init(struct sthread* ptr)
     ptr->pl = players_cnt;
 		ret = add_player(fd, ptr->team_id, ptr->id);
 	}
+  printf("step_standard_delay set to %d\n",step_standard_delay);
 	pthread_mutex_unlock(&mutex[1]);
   free(buf);
 	return ret; 
@@ -268,7 +268,7 @@ int server_work()
    	}
     sigaction(SIGINT, &sigint, NULL);
    	listen(sock_id, MAGIC_CONST);
-   	
+  
 	for (i = 0; i < MUTEX_CNT; ++i)
 	  	pthread_mutex_init(&mutex[i], NULL);
 	sthreads = malloc(sizeof(struct sthread) * threadscnt);

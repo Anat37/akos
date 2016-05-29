@@ -91,7 +91,6 @@ void user_input(int type)
 	unsigned int symbol;
 	if (type == 1)
 	{	
-    reprint();
 		symbol = getchar();
 		if (symbol == -1)
     printf("bad in!\n");

@@ -33,10 +33,10 @@ void msg_send(int desc, int type, size_t len, void* arg)
   if (ret == sizeof(int))
     /*printf("Sended size:%d\n", len);*/
 	ret = write(desc, arg, len);
-  if (type == 1 || type == 4 || type == 5)
+  /*if (type == 1 || type == 4 || type == 5)
     printf("Sended buf:%s\n", (char*)arg);
   if (ret != len)
-    printf("problems\n");
+    printf("problems\n");*/
 	return; 
 }
 
@@ -101,11 +101,13 @@ int msg_rec(int desc, int* type, size_t* len, void** arg)
 		}
 		readed += read_ret;
 	}
+  /*
   if (*type == 1 || *type == 4 || *type == 5)
     printf("Received buf %s\n", (char*)str);
   else
     printf("Received buf %d\n", *(int*)str);
   fflush(stdout);
+  */
 	*arg = str;
 	if (*type == MSG_ERR)
 	{
@@ -136,6 +138,7 @@ struct timespec time_inc(struct timespec from, int k)
     struct timespec ans;
     ans.tv_sec = from.tv_sec + (k * step_standard_delay)/1000;
     ans.tv_nsec = from.tv_nsec + ((k * step_standard_delay)%1000) * 1000000;
+    printf("step _ delay%d\n", &step_standard_delay);
     if (ans.tv_nsec/1000 > 1000000)
     {
         ++ans.tv_sec;

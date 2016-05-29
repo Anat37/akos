@@ -223,7 +223,6 @@ int add_team(int fd, int tid)
   sighst.sa_handler = &host_handler;
 	sighst.sa_mask = set;
 	sighst.sa_flags = 0;
-  
   sigaction(SIGUSR2, &sighst, NULL);
 	pthread_mutex_lock(&mutex[2]);
 	if (teams_cnt + 1 >= team_arr_size)

@@ -18,7 +18,7 @@ recharge_duration = 3
 mining_time = 3
 stay_health_drop = 0.001
 movement_health_drop = 0.04
-step_standard_delay = 1
+step_standard_delay = 0.1
 moratory_duration = 5
 
 items:

@@ -159,5 +159,6 @@ int main(int argc, char* argv[])
 	}
 	map_read();
 	server_work();
-	return stop_server();
+  free_mem();
+	return 0;
 }
