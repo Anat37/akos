@@ -50,7 +50,7 @@ int handlers1(int sig)
 	printf("Parent: %d, Me - Son1: %d, Son2: %d, Son3: %d, GrandSon1: %d, GrandSon2: %d\n",
 		pidc[0], pidc[1], pidc[2], pidc[3], pidc[4], pidc[5]);
     fflush(stdout);
-	close(pipes[0]);
+    close(pipes[0]);
 	close(pipes[1]);
 	flag = 0;
 	return 0;
@@ -64,8 +64,8 @@ int handlergs1(int sig)
 	printf("Parent: %d, Son1: %d, Son2: %d, Son3: %d, Me - GrandSon1: %d, GrandSon2: %d\n",
 		pidc[0], pidc[1], pidc[2], pidc[3], pidc[4], pidc[5]);
 	fflush(stdout);
-  close(pipes[0]);
-	close(pipes[1]);
+    close(pipes[0]);
+    close(pipes[1]);
 	exit(0);
 }
 
@@ -76,8 +76,8 @@ int handlergs2(int sig)
 	printf("Parent: %d, Son1: %d, Son2: %d, Son3: %d, GrandSon1: %d, Me - GrandSon2: %d\n",
 		pidc[0], pidc[1], pidc[2], pidc[3], pidc[4], pidc[5]);
 	fflush(stdout);
-  close(pipes[0]);
-	close(pipes[1]);
+    close(pipes[0]);
+    close(pipes[1]);
 	exit(0);
 }
 
@@ -88,8 +88,8 @@ int handlers3(int sig)
 	printf("Parent: %d, Son1: %d, Son2: %d, Me - Son3: %d, GrandSon1: %d, GrandSon2: %d\n",
 		pidc[0], pidc[1], pidc[2], pidc[3], pidc[4], pidc[5]);
 	fflush(stdout);
-  close(pipes[0]);
-	close(pipes[1]);
+    close(pipes[0]);
+    close(pipes[1]);
 	exit(0);
 }
 
@@ -100,8 +100,8 @@ int handlers2(int sig)
 	printf("Parent: %d, Son1: %d, Me - Son2: %d, Son3: %d, GrandSon1: %d, GrandSon2: %d\n",
 		pidc[0], pidc[1], pidc[2], pidc[3], pidc[4], pidc[5]);
 	fflush(stdout);
-  close(pipes[0]);
-	close(pipes[1]);
+    close(pipes[0]);
+    close(pipes[1]);
 	exit(0);
 }
 
@@ -111,21 +111,20 @@ int sigcnthand(int sig)
   return 0;
 }
 
-
 int main()
 {
 	int i;
 	int status = 0;
-  struct sigaction sigcnt;
-  sigset_t   set; 
-  sigemptyset(&set); 
-  sigcnt.sa_sigaction = NULL;
-  sigcnt.sa_handler = sigcnthand;
+    struct sigaction sigcnt;
+    sigset_t   set; 
+    sigemptyset(&set); 
+    sigcnt.sa_sigaction = NULL;
+    sigcnt.sa_handler = sigcnthand;
 	sigcnt.sa_mask = set;
 	sigcnt.sa_flags = 0;
   
-  sigaction(SIGRTMIN + 1, &sigcnt, NULL);
-	if (pipe(pipes) == -1)
+    sigaction(SIGRTMIN + 1, &sigcnt, NULL);
+    if (pipe(pipes) == -1)
 	{
 		perror("Error creating pipe");
 		return 0;
@@ -137,14 +136,13 @@ int main()
 	{
 		pid[1] = getpid();
 		pid[2] = fork();
-    
 		if (pid[2] == 0)
 		{
 			pid[2] = getpid();
 			/*grandson 1, know 0,1,2*/
 			signal(SIGUSR1, &handlergs1);
-      kill(pid[0], SIGRTMIN + 1);
-			while (flag)
+    kill(pid[0], SIGRTMIN + 1);
+    while (flag)
 			{
 				pause();
 			}
@@ -157,7 +155,7 @@ int main()
 			/*grandson 2, know 0,1,2,3*/
 			signal(SIGUSR1, &handlergs2);
       kill(pid[0], SIGRTMIN + 1);
-			while (flag)
+	while (flag)
 			{
 				pause();
 			}
@@ -211,8 +209,6 @@ int main()
 		return 0;
 	}
 	/*parent, know 0,1,4,5*/
- 
-	
   while (cnt < 5)
   {
     pause();
