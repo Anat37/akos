@@ -1,0 +1,150 @@
+
+
+
+
+
+		++i;
+		fprintf(f, "%c", str[i]);
+		return;
+	fprintf(f, "\n");
+	if (str == NULL)
+	int i = 0;
+	while (str[i] != '\n' && str[i] != EOF)
+	{
+	}
+  
+  	++words;
+    
+        
+            ++words;
+            buf = data[j];
+            data = realloc(data, strsize * sizeof(char*));
+            data[i] = buf;
+            data[j] = data[i];
+            free(buf);
+            if (data == NULL)
+            printf("whats up?");
+            return 3;
+            strsize += 10;
+        /*printf("%s", data[strcnt - 1]);*/
+        buf = ptr;
+        data[strcnt] = NULL;
+        flag = 0;
+        flag = 2;
+        for (j = i + 1; j < strcnt; ++j)
+        free(data[i]);
+        if (mycmp(data[i], data[j]) >= 0) {
+        if (ptr == NULL)
+        if (strcnt + 1 == strsize)
+        if (wflag)
+        myputs(outf, data[i]);
+        printf("Few args");
+        printf("Invalid file names");
+        ptr = realloc(buf,  size * sizeof(char));
+        ret = safe_gets(inf, &data[strcnt]);
+        return -1;
+        return 0;
+        return 0;
+        return 0;
+        return 1;
+        return 1;
+        size += 10;
+        strcnt++;
+        wflag = 0;
+        wflag = 1;
+        {
+        {   
+        }
+        }
+        }
+      *res = NULL;
+      free(*res);
+    ++i;
+    ++i;
+    FILE* inf;
+    FILE* outf;
+    buf[i] = c;
+    c = fgetc(f);
+    char* buf;
+    char** data = NULL;
+    data = malloc(10 * sizeof(char*));
+    data[strcnt] = NULL;
+    else return -1;    
+    fclose(inf);
+    fclose(outf);    
+    for (i = 0; i < strcnt; ++i)
+    for (i = 0; i < strcnt; ++i){
+    free(data);
+    free(data[i]);   
+    if (a[i] == '\n')
+    if (a[i] == b[i])
+    if (a[i] > b[i])
+    if (argc < 3)
+    if (b[i] == '\n')
+    if (c != ' ')
+    if (c == ' ')
+    if (c == '\n') 
+    if (c == EOF){
+    if (i == size){
+    if (outf == NULL || inf == NULL)
+    inf = fopen(argv[1], "r");
+    int i = 0;
+    int i, j;
+    int ret = 0;
+    int strcnt = 0;
+    outf = fopen(argv[2], "w");
+    printf("Words: %ld\n", words);
+    ret = safe_gets(inf, &data[strcnt]);
+    return 0;    
+    return 1;
+    return 1; 
+    size_t strsize = 10;
+    while (a[i] == b[i] && a[i] != '\n')
+    while (ret == 0)
+    {
+    {
+    {
+    {
+    }
+    }
+    }
+    }
+    }
+    }
+    } 
+  *res = buf;
+  buf = NULL;
+  buf = malloc(size * sizeof(char));
+  char c = EOF; 
+  char* buf = NULL;
+  char* ptr = NULL;
+  if (*res != NULL)
+  if (f == NULL)
+  if (feof(f))
+  if (wflag)
+  int flag = 1;
+  int i = 0;
+  int size = 30;
+  int wflag = 0;
+  ptr = NULL;
+  return flag;
+  while (!feof(f) && flag == 1)
+  {
+  {
+  }
+  }
+#include <stdio.h>
+#include <stdlib.h>
+int main(int argc, char* argv[])
+int mycmp(const char* a, const char* b)
+int safe_gets(FILE* f,char** res)
+void myputs(FILE* f, char* str)
+volatile long words = 0;
+{
+{
+{
+{
+}
+}
+}
+}

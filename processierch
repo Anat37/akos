@@ -1,0 +1,96 @@
+#include<unistd.h>
+#include<stdio.h>
+
+volatile int pip[2];
+volatile pid_t p, t1, t2, t3;
+volatile int status;
+short flag = 1;
+
+int handler(int sig)
+{
+	if (sig == SIGUSR1)
+	{
+		read(pip[0], &t2, sizeof(pid_t));
+		read(pip[0], &t3, sizeof(pid_t));
+		write(pip[1], &t3, sizeof(pid_t));
+		kill(t2, SIGUSR2);
+		printf("parent = %d, *son1 = %d, son2 = %d, son3 = %d\n", p, t1, t2, t3);
+		close(pip[0]);
+		close(pip[1]); 
+		exit();
+	}
+	
+	if (sig == SIGUSR2)
+	{
+		read(pip[0], &t3, sizeof(pid_t));
+		printf("parent = %d, son1 = %d, *son2 = %d, son3 = %d\n", p, t1, t2, t3); 
+		close(pip[0]);
+		close(pip[1]);
+		exit();
+	}
+}
+
+int main()
+{
+	
+	
+	p = getpid();
+	
+	if (pipe(pip))
+	{
+		return -1;
+	}
+	
+	t1 = fork();
+	if (t1 == -1)
+		return -1; 
+	if (t1 == 0)
+	{
+		t1 = getpid();
+		signal(SIGUSR1, &handler);
+		while (flag)
+		{
+			pause();
+		}
+		return 0;
+	}
+	
+	t2 = fork();
+	if (t2 == -1)
+		return -1; 
+	if (t2 == 0)
+	{
+		t2 = getpid();
+		signal(SIGUSR2, &handler);
+		while (flag)
+		{
+			pause();
+		}
+		return 0;
+	}
+	
+	t3 = fork();
+	if (t3 == -1)
+		return -1; 
+	if (t3 == 0)
+	{	
+		close(pip[0]);
+		close(pip[1]);
+		t3 = getpid();
+		printf("parent = %d, son1 = %d, son2 = %d, *son3 = %d\n", p, t1, t2, t3); 
+		return 0;
+	}
+	
+	write(pip[1], &t2, sizeof(pid_t));
+	write(pip[1], &t3, sizeof(pid_t));
+	kill(t1, SIGUSR1);
+	
+	close(pip[0]);
+	close(pip[1]);
+	waitpid(p1, &status, 0);
+	waitpid(p2, &status, 0);
+	waitpid(p3, &status, 0);
+	printf("*parent = %d, son1 = %d, son2 = %d, son3 = %d\n", p, t1, t2, t3); 
+	
+	return 0;
+}
